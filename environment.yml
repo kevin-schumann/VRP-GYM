@@ -12,3 +12,4 @@ dependencies:
   - pip
   - pip:
       - pdoc3
+      - gym
