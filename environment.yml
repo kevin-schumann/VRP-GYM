@@ -1,0 +1,14 @@
+name: gym_vrp
+channels:
+  - pytorch
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pytorch
+  - numpy
+  - pytest
+  - black
+  - pip
+  - pip:
+      - pdoc3
