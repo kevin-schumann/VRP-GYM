@@ -36,7 +36,7 @@ def test_vrp_graph_network_init():
     network: VRPNetwork = VRPNetwork(
         num_graphs=num_graphs, num_nodes=num_nodes, num_depots=num_depots
     )
-    assert len(set(num_nodes_each_graph)) != 1
+    assert len(network.graphs) == num_graphs
 
     # get number of depots for each graph
     num_depots_each_graph = []
@@ -47,4 +47,4 @@ def test_vrp_graph_network_init():
 
     # get number of nodes for each graph
     num_nodes_each_graph = [len(graph.nodes) for graph in network.graphs]
-    assert len(network.graphs) == num_graphs
+    assert len(set(num_nodes_each_graph)) != 1
