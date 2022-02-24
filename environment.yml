@@ -13,3 +13,4 @@ dependencies:
   - pip:
       - pdoc3
       - gym
+      - matplotlib
