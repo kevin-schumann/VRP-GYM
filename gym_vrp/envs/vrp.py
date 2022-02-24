@@ -2,13 +2,13 @@ from typing import Optional, Tuple, TypeVar, Union
 from gym import Env
 from enum import Enum, auto
 import numpy as np
+from graph.graph import VPRNetwork, NodeRange
 
-ActType = TypeVar("ActType")
 ObsType = TypeVar("ObsType")
 
 
 class VRPVariant(Enum):
-    """ Type of VRP variant to initialise. """
+    """Type of VRP variant to initialise."""
 
     DEFAULT_VRP = auto()
 
@@ -49,29 +49,45 @@ class DefaultVRPEnv(VRPEnv, Env):
     metadata = {"render.modes": ["human"]}
     variant: VRPVariant = VRPVariant.DEFAULT_VRP
 
-    def __init__(self):
-        ...
+    def __init__(self, num_nodes: int = 32, batch_size: int = 128):
+        self.num_nodes = num_nodes
+        self.batch_size = self.batch_size
+        self.step = 0
 
-    def step(self, action: ActType) -> Tuple[ObsType, float, bool, dict]:
+        self._generate_graphs()
+
+    def step(self, actions: np.ndarray) -> Tuple[ObsType, float, bool, dict]:
         """
         Run the environment one timestep. It's the users responsiblity to
         call reset() when the end of the episode has been reached. Accepts
         an actions and return a tuple of (observation, reward, done, info)
 
         Args:
-            action (ActType): Action by the agent. Should be within the
-                environments action space (self.action_space).
+            actions (nd.ndarray): Which node to visit for each graph.
+                Shape of actions is (batch_size, 1).
 
         Returns:
-            Tuple[ObsType, float, bool, dict]: Tuple of the observation, 
+            Tuple[ObsType, float, bool, dict]: Tuple of the observation,
                 reward, done and info. The observation is within
                 self.observation_space. The reward is for the previous action.
-                If done equals True then the episode is over. Stepping through 
+                If done equals True then the episode is over. Stepping through
                 environment while done returns undefined results. Info contains
                 may contain additions info in terms of metrics, state variables
                 and such.
         """
-        ...
+        self.visited[:, actions] = 1
+        self.step += 1
+
+        # walking steps in current state
+        paths = np.vstack([self.prev_action, actions])
+
+        self.prev_action = actions
+        return -np.mean(
+            self.sampler.get_distances(paths), axis=0
+        )  # return average negative walk length
+
+    def is_done(self):
+        return np.all(self.visited == 1)
 
     def reset(
         self,
@@ -91,9 +107,25 @@ class DefaultVRPEnv(VRPEnv, Env):
         Returns:
             Union[ObsType, Tuple[ObsType, dict]]: _description_
         """
+        self.__generate_graphs()
+
+        # TODO
+        return None
 
     def render(self, mode: str = "human") -> Optional[Union[np.ndarray, str]]:
         ...
 
     def close(self):
         ...
+
+    def __generate_graphs(self):
+        self.visited = np.zeros(self.batch_size, self.num_nodes)
+        self.sampler = VPRNetwork(
+            num_graphs=self.batch_size,
+            num_nodes=NodeRange(self.num_nodes, self.num_nodes),
+            num_depots=NodeRange(1, 1),
+        )
+
+        # Generate start points for each graph in batch
+        depots = self.sampler.get_depots()
+        self.prev_action = depots[:, np.random.choice(depots.shape[1], 1)]

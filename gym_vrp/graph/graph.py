@@ -35,9 +35,11 @@ class VRPGraph:
         nx.set_node_attributes(self.graph, node_position, "coordinates")
 
         # sample depots within the graph
-        depots = np.random.choice(node_num, size=depot_num, replace=False)
+        self.depots = np.random.choice(node_num, size=depot_num, replace=False)
+
+        # set depots as attribute in nodes
         one_hot = np.zeros(node_num)
-        one_hot[depots] = 1
+        one_hot[self.depots] = 1
         one_hot_dict = {i: depot for i, depot in enumerate(one_hot)}
         nx.set_node_attributes(self.graph, one_hot_dict, "depot")
 
@@ -67,37 +69,81 @@ class VRPGraph:
     def nodes(self):
         return self.graph.nodes.data()
 
+    def euclid_distance(self, node1_idx: int, node2_idx: int) -> float:
+        """
+        Calculates the euclid distance between two nodes
+        with their idx's respectively.
+        """
+
+        node_one_pos = self.graph.nodes[node1_idx]["coordinates"]
+        node_two_pos = self.graph.nodes[node2_idx]["coordinates"]
+
+        return np.linalg.norm(node_one_pos - node_two_pos)
+
 
 class VRPNetwork:
     def __init__(
         self,
         num_graphs: int,
-        num_nodes: NodeRange,
-        num_depots: NodeRange,
+        num_nodes: int,
+        num_depots: int,
     ) -> List[VRPGraph]:
         """
         Generate graphs which are fully connected. This can be done by placing
         nodes randomly in an euclidean space and connecting all nodes with each other.
         """
+
         assert (
-            num_nodes.min >= num_depots.max
+            num_nodes >= num_depots
         ), "Number of depots should be lower than number of depots"
 
+        self.num_nodes = num_nodes
+        self.num_depots = num_depots
+        self.num_graphs = num_graphs
         self.graphs: List[VRPGraph] = []
 
-        # sample number of nodes / depots
-        node_nums = np.random.randint(
-            low=num_nodes.min, high=num_nodes.max + 1, size=(num_graphs,)
-        )
-        depot_nums = np.random.randint(
-            low=num_depots.min, high=num_depots.max + 1, size=(num_graphs,)
-        )
-
         # generate a graph with nn nodes and nd depots
-        for nn, nd in zip(node_nums, depot_nums):
+
+        for _ in range(num_graphs):
             self.graphs.append(
                 VRPGraph(
-                    nn,
-                    nd,
+                    num_nodes,
+                    num_depots,
                 )
             )
+
+    def get_distance(self, graph_idx: int, node_idx_1: int, node_idx_2: int) -> float:
+        return self.graphs[graph_idx].euclid_distance(node_idx_1, node_idx_2)
+
+    def get_distances(self, paths) -> List[float]:
+        """
+        Calculatest the euclid distance between
+        each node pair in paths.
+
+        Args:
+            paths (nd.array): Shape num_graphs x 2
+                where the second dimension denotes
+                [source_node, target_node].
+
+        Returns:
+            List[float]: Euclid distance between each
+                node pair.
+        """
+
+        return [self.get_distance(index, item[0], item[1]) for index, item in paths]
+
+    def get_depots(self) -> List[List[int]]:
+        """
+        Get the depots of every graph within the network.
+
+        Returns:
+            List[List[int]]: Returns nd.array of shape
+                num_graphs x num_depots.
+        """
+
+        depos_idx = np.zeros((self.num_graphs, self.num_depots))
+
+        for i in range(self.num_graphs):
+            depos_idx[i] = self.graphs[i].depots
+
+        return depos_idx
