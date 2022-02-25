@@ -3,6 +3,7 @@ from typing import List
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 
 # TODO Move to util
 @dataclass(frozen=True)
@@ -43,23 +44,48 @@ class VRPGraph:
         one_hot_dict = {i: depot for i, depot in enumerate(one_hot)}
         nx.set_node_attributes(self.graph, one_hot_dict, "depot")
 
-    def draw(self):
+        self._set_default_colors()
+
+    def _set_default_colors(self):
+        """
+        Sets the default colors of the edges / nodes
+        as attributes. Color schema is:
+
+        Node is black except when it is a depot which
+        shall be red. Unused edges are grey els red.
+        """
+        nx.set_edge_attributes(self.graph, "grey", "edge_color")
+        nx.set_node_attributes(self.graph, "black", "node_color")
+
+        for node in self.depots:
+            self.graph.nodes[node]["node_color"] = "red"
+
+    def draw(self, ax):
         """
         Draws the graph as a matplotlib plot.
         Depots are drawn in red.
         """
 
-        # Generate color for each node
-        color_map = {0: "black", 1: "red"}
-        node_colors = [
-            color_map[node[1]["depot"]] for node in self.graph.nodes(data=True)
-        ]
+        # draw nodes according to color and position attribute
         pos = nx.get_node_attributes(self.graph, "coordinates")
+        node_colors = nx.get_node_attributes(self.graph, "node_color").values()
+        nx.draw_networkx_nodes(self.graph, pos, node_color=node_colors, ax=ax)
 
-        nx.draw_networkx_nodes(self.graph, pos, node_color=node_colors)
-        nx.draw_networkx_edges(self.graph, pos, alpha=0.5, edge_color="grey")
+        # draw edges
+        edge_colors = nx.get_edge_attributes(self.graph, "edge_color").values()
+        nx.draw_networkx_edges(
+            self.graph, pos, alpha=0.5, edge_color=edge_colors, ax=ax
+        )
 
-        plt.show()
+    def color_edge(self, source_node: int, target_node: int) -> None:
+        """
+        Sets the edge color to red.
+
+        Args:
+            source_node (int): Source node of the edge
+            target_node (int): Target node of the edge
+        """
+        self.graph.edges[source_node, target_node]["edge_color"] = "red"
 
     @property
     def edges(self):
@@ -129,7 +155,6 @@ class VRPNetwork:
             List[float]: Euclid distance between each
                 node pair.
         """
-        print(paths)
         return [
             self.get_distance(index, source, dest)
             for index, (source, dest) in enumerate(paths)
@@ -150,3 +175,40 @@ class VRPNetwork:
             depos_idx[i] = self.graphs[i].depots
 
         return depos_idx
+
+    def draw(self, graph_idxs: List[int]) -> None:
+        """
+        Draw multiple graphs in a matplotlib grid.
+
+        Args:
+            graph_idxs (List[int]): Idxs of graphs which get drawn.
+        """
+
+        num_columns = min(len(graph_idxs), 3)
+        num_rows = np.ceil(len(graph_idxs) / num_columns).astype(int)
+
+        plt.clf()
+        fig = plt.figure(figsize=(5 * num_columns, 5 * num_rows))
+
+        for n, graph_idx in enumerate(graph_idxs):
+            ax = plt.subplot(num_rows, num_columns, n + 1)
+
+            self.graphs[graph_idx].draw(ax=ax)
+        plt.show()
+
+        fig.canvas.draw()
+        data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+        image = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+
+        return image
+
+    def color_edges(self, transition_matrix: List[List[int]]) -> None:
+        """
+        Colors the mentioned edge for each graph.
+
+        Args:
+            transition_matrix (List[List[int]]): Shape num_graphs x 2
+                where each row is [source_node_idx, target_node_idx].
+        """
+        for i, row in enumerate(transition_matrix):
+            self.graphs[i].color_edge(row[0], row[1])

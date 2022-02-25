@@ -46,14 +46,23 @@ class DefaultVRPEnv(VRPEnv, Env):
     open-ai gym api as an environment.
     """
 
-    metadata = {"render.modes": ["human"]}
+    metadata = {"render.modes": ["human", "rgb_array"]}
     variant: VRPVariant = VRPVariant.DEFAULT_VRP
 
-    def __init__(self, num_nodes: int = 32, batch_size: int = 128, seed: int = 69):
+    def __init__(
+        self,
+        num_nodes: int = 32,
+        batch_size: int = 128,
+        num_draw: int = 6,
+        seed: int = 69,
+    ):
+        assert num_draw <= batch_size
+
         np.random.seed(seed)
         self.num_nodes = num_nodes
         self.batch_size = batch_size
         self.step_count = 0
+        self.draw_idxs = np.random.choice(batch_size, num_draw, replace=False)
 
         self.__generate_graphs()
 
@@ -76,16 +85,23 @@ class DefaultVRPEnv(VRPEnv, Env):
                 may contain additions info in terms of metrics, state variables
                 and such.
         """
+        assert actions.shape[0] == self.batch_size
+
         self.visited[:, actions] = 1
         self.step_count += 1
 
         # walking steps in current state
-        paths = np.hstack([self.prev_action, actions])
-
+        paths = np.hstack([self.prev_action, actions]).astype(
+            int
+        )  # shape: batch_size x 2
+        self.sampler.color_edges(paths)
         self.prev_action = actions
-        return -np.mean(
-            self.sampler.get_distances(paths), axis=0
-        )  # return average negative walk length
+        return (
+            None,
+            -np.mean(self.sampler.get_distances(paths), axis=0),
+            self.is_done,
+            None,
+        )
 
     def is_done(self):
         return np.all(self.visited == 1)
@@ -113,8 +129,15 @@ class DefaultVRPEnv(VRPEnv, Env):
         # TODO
         return None
 
-    def render(self, mode: str = "human") -> Optional[Union[np.ndarray, str]]:
-        ...
+    def render(self, num_graphs: int = 1, mode: str = "human"):
+        """
+        Visualize one step in the env. Since its batched this methods renders n random graphs
+        from the batch.
+
+        Args:
+            mode (str): ...
+        """
+        return self.sampler.draw(self.draw_idxs)
 
     def close(self):
         ...
