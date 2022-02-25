@@ -16,7 +16,7 @@ class VRPGraph:
 
     graph: nx.Graph = nx.Graph()
 
-    def __init__(self, node_num: int, depot_num: int):
+    def __init__(self, num_nodes: int, num_depots: int):
         """
         Creates a fully connected graph with node_num nodes
         and depot num depots. Coordinates of each node
@@ -26,20 +26,21 @@ class VRPGraph:
             node_num (int): Number of nodes in the graph.
             depot_num (int): Number of depots in the graph.
         """
-
-        self.graph = nx.complete_graph(node_num)
+        self.num_nodes = num_nodes
+        self.num_depots = num_depots
+        self.graph = nx.complete_graph(num_nodes)
 
         # set coordinates for each node
         node_position = {
-            i: coordinates for i, coordinates in enumerate(np.random.rand(node_num, 2))
+            i: coordinates for i, coordinates in enumerate(np.random.rand(num_nodes, 2))
         }
         nx.set_node_attributes(self.graph, node_position, "coordinates")
 
         # sample depots within the graph
-        self.depots = np.random.choice(node_num, size=depot_num, replace=False)
+        self.depots = np.random.choice(num_nodes, size=num_depots, replace=False)
 
         # set depots as attribute in nodes
-        one_hot = np.zeros(node_num)
+        one_hot = np.zeros(num_nodes)
         one_hot[self.depots] = 1
         one_hot_dict = {i: depot for i, depot in enumerate(one_hot)}
         nx.set_node_attributes(self.graph, one_hot_dict, "depot")
@@ -94,6 +95,17 @@ class VRPGraph:
     @property
     def nodes(self):
         return self.graph.nodes.data()
+
+    @property
+    def get_node_positions(self) -> np.ndarray:
+        """
+        Returns the coordinates of each node as
+        an ndarray of shape (num_nodes, 2) sorted
+        by the node index.
+        """
+
+        positions = nx.get_node_attributes(self.graph, "coordinates").values()
+        return np.asarray(positions).reshape(self.num_nodes, 2)
 
     def euclid_distance(self, node1_idx: int, node2_idx: int) -> float:
         """
@@ -212,3 +224,16 @@ class VRPNetwork:
         """
         for i, row in enumerate(transition_matrix):
             self.graphs[i].color_edge(row[0], row[1])
+
+    def get_graph_positions(self) -> np.ndarray:
+        """
+        Returns the coordinates of each node in every graph as
+        an ndarray of shape (num_graphs, num_nodes, 2) sorted
+        by the graph and node index.
+        """
+
+        node_positions = np.zeros(shape=(len(self.graphs), self.num_nodes, 2))
+        for i, graph in enumerate(self.graphs):
+            node_positions[i] = graph.get_node_positions()
+
+        return node_positions

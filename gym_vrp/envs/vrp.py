@@ -94,17 +94,33 @@ class DefaultVRPEnv(VRPEnv, Env):
         paths = np.hstack([self.prev_action, actions]).astype(
             int
         )  # shape: batch_size x 2
+
         self.sampler.color_edges(paths)
         self.prev_action = actions
+
         return (
-            None,
+            self.__get_state(),
             -np.mean(self.sampler.get_distances(paths), axis=0),
-            self.is_done,
+            self.__is_done,
             None,
         )
 
-    def is_done(self):
+    def __is_done(self):
         return np.all(self.visited == 1)
+
+    def __get_state(self) -> np.ndarray:
+        """ """
+        # batch size x 4 (x, y, d, v)
+        state = np.hstack(
+            [
+                self.sampler.get_graph_positions,
+                np.zeros(self.num_nodes, 1),
+                self.visited,
+            ]
+        )
+        state[:, self.depots, 2] = 1
+
+        return state
 
     def reset(
         self,
@@ -151,5 +167,5 @@ class DefaultVRPEnv(VRPEnv, Env):
         )
 
         # Generate start points for each graph in batch
-        depots = self.sampler.get_depots()
-        self.prev_action = depots[:, np.random.choice(depots.shape[1], 1)]
+        self.depots = self.sampler.get_depots()
+        self.prev_action = self.depots[:, np.random.choice(self.depots.shape[1], 1)]
