@@ -129,8 +129,11 @@ class VRPNetwork:
             List[float]: Euclid distance between each
                 node pair.
         """
-
-        return [self.get_distance(index, item[0], item[1]) for index, item in paths]
+        print(paths)
+        return [
+            self.get_distance(index, source, dest)
+            for index, (source, dest) in enumerate(paths)
+        ]
 
     def get_depots(self) -> List[List[int]]:
         """

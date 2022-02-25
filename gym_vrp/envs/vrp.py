@@ -2,7 +2,7 @@ from typing import Optional, Tuple, TypeVar, Union
 from gym import Env
 from enum import Enum, auto
 import numpy as np
-from graph.graph import VPRNetwork, NodeRange
+from ..graph.graph import VRPNetwork, NodeRange
 
 ObsType = TypeVar("ObsType")
 
@@ -49,12 +49,13 @@ class DefaultVRPEnv(VRPEnv, Env):
     metadata = {"render.modes": ["human"]}
     variant: VRPVariant = VRPVariant.DEFAULT_VRP
 
-    def __init__(self, num_nodes: int = 32, batch_size: int = 128):
+    def __init__(self, num_nodes: int = 32, batch_size: int = 128, seed: int = 69):
+        np.random.seed(seed)
         self.num_nodes = num_nodes
-        self.batch_size = self.batch_size
-        self.step = 0
+        self.batch_size = batch_size
+        self.step_count = 0
 
-        self._generate_graphs()
+        self.__generate_graphs()
 
     def step(self, actions: np.ndarray) -> Tuple[ObsType, float, bool, dict]:
         """
@@ -76,10 +77,10 @@ class DefaultVRPEnv(VRPEnv, Env):
                 and such.
         """
         self.visited[:, actions] = 1
-        self.step += 1
+        self.step_count += 1
 
         # walking steps in current state
-        paths = np.vstack([self.prev_action, actions])
+        paths = np.hstack([self.prev_action, actions])
 
         self.prev_action = actions
         return -np.mean(
@@ -119,11 +120,11 @@ class DefaultVRPEnv(VRPEnv, Env):
         ...
 
     def __generate_graphs(self):
-        self.visited = np.zeros(self.batch_size, self.num_nodes)
-        self.sampler = VPRNetwork(
+        self.visited = np.zeros(shape=(self.batch_size, self.num_nodes))
+        self.sampler = VRPNetwork(
             num_graphs=self.batch_size,
-            num_nodes=NodeRange(self.num_nodes, self.num_nodes),
-            num_depots=NodeRange(1, 1),
+            num_nodes=self.num_nodes,
+            num_depots=1,
         )
 
         # Generate start points for each graph in batch
