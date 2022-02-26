@@ -99,7 +99,7 @@ class DefaultVRPEnv(VRPEnv, Env):
         self.prev_action = actions
 
         return (
-            self.__get_state(),
+            self.get_state(),
             -np.mean(self.sampler.get_distances(paths), axis=0),
             self.__is_done,
             None,
@@ -108,17 +108,28 @@ class DefaultVRPEnv(VRPEnv, Env):
     def __is_done(self):
         return np.all(self.visited == 1)
 
-    def __get_state(self) -> np.ndarray:
-        """ """
-        # batch size x 4 (x, y, d, v)
-        state = np.hstack(
+    def get_state(self) -> np.ndarray:
+        """
+        Getter for the current environment state
+
+        Returns:
+            np.ndarray: Shape (num_graph, num_nodes, 4)
+            where the third dimension consists of the 
+            x, y coordinates, if the node is a depot, 
+            and if it has been visted yet.
+        """
+
+        # generate state (depots not yet set)
+        state = np.dstack(
             [
-                self.sampler.get_graph_positions,
-                np.zeros(self.num_nodes, 1),
+                self.sampler.get_graph_positions(),
+                np.zeros((self.batch_size, self.num_nodes)),
                 self.visited,
             ]
         )
-        state[:, self.depots, 2] = 1
+
+        # set if each node is depot or not (1 means node is depot)
+        state[np.arange(len(state)), self.depots.T, 2] = 1
 
         return state
 
@@ -141,9 +152,7 @@ class DefaultVRPEnv(VRPEnv, Env):
             Union[ObsType, Tuple[ObsType, dict]]: _description_
         """
         self.__generate_graphs()
-
-        # TODO
-        return None
+        return self.__get_state()
 
     def render(self, num_graphs: int = 1, mode: str = "human"):
         """
@@ -161,9 +170,7 @@ class DefaultVRPEnv(VRPEnv, Env):
     def __generate_graphs(self):
         self.visited = np.zeros(shape=(self.batch_size, self.num_nodes))
         self.sampler = VRPNetwork(
-            num_graphs=self.batch_size,
-            num_nodes=self.num_nodes,
-            num_depots=1,
+            num_graphs=self.batch_size, num_nodes=self.num_nodes, num_depots=1,
         )
 
         # Generate start points for each graph in batch

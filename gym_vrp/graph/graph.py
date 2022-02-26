@@ -97,7 +97,7 @@ class VRPGraph:
         return self.graph.nodes.data()
 
     @property
-    def get_node_positions(self) -> np.ndarray:
+    def node_positions(self) -> np.ndarray:
         """
         Returns the coordinates of each node as
         an ndarray of shape (num_nodes, 2) sorted
@@ -105,7 +105,7 @@ class VRPGraph:
         """
 
         positions = nx.get_node_attributes(self.graph, "coordinates").values()
-        return np.asarray(positions).reshape(self.num_nodes, 2)
+        return np.asarray(list(positions))
 
     def euclid_distance(self, node1_idx: int, node2_idx: int) -> float:
         """
@@ -121,10 +121,7 @@ class VRPGraph:
 
 class VRPNetwork:
     def __init__(
-        self,
-        num_graphs: int,
-        num_nodes: int,
-        num_depots: int,
+        self, num_graphs: int, num_nodes: int, num_depots: int,
     ) -> List[VRPGraph]:
         """
         Generate graphs which are fully connected. This can be done by placing
@@ -141,14 +138,8 @@ class VRPNetwork:
         self.graphs: List[VRPGraph] = []
 
         # generate a graph with nn nodes and nd depots
-
         for _ in range(num_graphs):
-            self.graphs.append(
-                VRPGraph(
-                    num_nodes,
-                    num_depots,
-                )
-            )
+            self.graphs.append(VRPGraph(num_nodes, num_depots,))
 
     def get_distance(self, graph_idx: int, node_idx_1: int, node_idx_2: int) -> float:
         return self.graphs[graph_idx].euclid_distance(node_idx_1, node_idx_2)
@@ -181,7 +172,7 @@ class VRPNetwork:
                 num_graphs x num_depots.
         """
 
-        depos_idx = np.zeros((self.num_graphs, self.num_depots))
+        depos_idx = np.zeros((self.num_graphs, self.num_depots), dtype=int)
 
         for i in range(self.num_graphs):
             depos_idx[i] = self.graphs[i].depots
@@ -214,12 +205,12 @@ class VRPNetwork:
 
         return image
 
-    def color_edges(self, transition_matrix: List[List[int]]) -> None:
+    def color_edges(self, transition_matrix: np.ndarray) -> None:
         """
         Colors the mentioned edge for each graph.
 
         Args:
-            transition_matrix (List[List[int]]): Shape num_graphs x 2
+            transition_matrix (np.ndarray): Shape num_graphs x 2
                 where each row is [source_node_idx, target_node_idx].
         """
         for i, row in enumerate(transition_matrix):
@@ -234,6 +225,6 @@ class VRPNetwork:
 
         node_positions = np.zeros(shape=(len(self.graphs), self.num_nodes, 2))
         for i, graph in enumerate(self.graphs):
-            node_positions[i] = graph.get_node_positions()
+            node_positions[i] = graph.node_positions
 
         return node_positions
