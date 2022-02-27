@@ -1,4 +1,3 @@
-from typing import Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,6 +5,9 @@ import torch.nn.functional as F
 
 class GraphEncoder(nn.module):
     def __init__(self, embedding_dim, hidden_dim, num_attention_layers, num_heads):
+        super().__init__()
+
+        # TODO: set as parameter since not a constant factor
         depot_dim: int = 2
         node_dim: int = 2
 
@@ -40,6 +42,8 @@ class GraphEncoder(nn.module):
 
 class MultiHeadAttentionLayer(nn.module):
     def __init__(self, embedding_dim, hidden_dim, num_heads):
+        super().__init__()
+
         self.multi_head_attention = nn.MultiheadAttention(
             embed_dim=embedding_dim, num_heads=num_heads
         )
@@ -68,4 +72,3 @@ class MultiHeadAttentionLayer(nn.module):
         out = self.batch_norm2(out)
 
         return out
-
