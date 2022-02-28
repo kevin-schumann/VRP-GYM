@@ -152,9 +152,9 @@ class DefaultVRPEnv(VRPEnv, Env):
             Union[ObsType, Tuple[ObsType, dict]]: _description_
         """
         self.__generate_graphs()
-        return self.__get_state()
+        return self.get_state()
 
-    def render(self, num_graphs: int = 1, mode: str = "human"):
+    def render(self, mode: str = "human"):
         """
         Visualize one step in the env. Since its batched this methods renders n random graphs
         from the batch.
