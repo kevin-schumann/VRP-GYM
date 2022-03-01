@@ -86,6 +86,9 @@ class VRPGraph:
             source_node (int): Source node of the edge
             target_node (int): Target node of the edge
         """
+        if source_node == target_node:
+            return
+
         self.graph.edges[source_node, target_node]["edge_color"] = "red"
 
     @property
@@ -121,7 +124,10 @@ class VRPGraph:
 
 class VRPNetwork:
     def __init__(
-        self, num_graphs: int, num_nodes: int, num_depots: int,
+        self,
+        num_graphs: int,
+        num_nodes: int,
+        num_depots: int,
     ) -> List[VRPGraph]:
         """
         Generate graphs which are fully connected. This can be done by placing
@@ -139,7 +145,12 @@ class VRPNetwork:
 
         # generate a graph with nn nodes and nd depots
         for _ in range(num_graphs):
-            self.graphs.append(VRPGraph(num_nodes, num_depots,))
+            self.graphs.append(
+                VRPGraph(
+                    num_nodes,
+                    num_depots,
+                )
+            )
 
     def get_distance(self, graph_idx: int, node_idx_1: int, node_idx_2: int) -> float:
         return self.graphs[graph_idx].euclid_distance(node_idx_1, node_idx_2)
@@ -158,10 +169,12 @@ class VRPNetwork:
             List[float]: Euclid distance between each
                 node pair.
         """
-        return [
-            self.get_distance(index, source, dest)
-            for index, (source, dest) in enumerate(paths)
-        ]
+        return np.array(
+            [
+                self.get_distance(index, source, dest)
+                for index, (source, dest) in enumerate(paths)
+            ]
+        )
 
     def get_depots(self) -> List[List[int]]:
         """

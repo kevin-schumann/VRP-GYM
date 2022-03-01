@@ -1,11 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.distributions.categorical import Categorical
 import numpy as np
 
 
 class GraphDecoder(nn.Module):
-    def __init__(self, emb_dim=128, num_heads=8, v_dim=2, k_dim=2, seed=69):
+    def __init__(
+        self,
+        emb_dim: int = 128,
+        num_heads: int = 8,
+        v_dim: int = 2,
+        k_dim: int = 2,
+        seed=69,
+    ):
         super().__init__()
         torch.manual_seed(seed)
 
@@ -27,7 +35,11 @@ class GraphDecoder(nn.Module):
         self.last_ = None
 
     def forward(
-        self, node_embs: torch.Tensor, mask: torch.Tensor = None, C=10, rollout=False
+        self,
+        node_embs: torch.Tensor,
+        mask: torch.Tensor = None,
+        C: int = 10,
+        rollout: bool = False,
     ):
         """
         Forward method for the decoder.
@@ -56,19 +68,25 @@ class GraphDecoder(nn.Module):
         q = self._att_output(q)
 
         u = torch.tanh(q.bmm(k.transpose(-2, -1)) / emb_dim ** 0.5) * C
-        u = u.masked_fill(mask.unsqueeze(1), float("-inf"))
+        u = u.masked_fill(mask.unsqueeze(1).bool(), float("-inf"))
 
+        log_prob = torch.zeros(size=(batch_size,))
+        nn_idx = None
         if rollout:
             nn_idx = u.argmax(-1)
+            # print(mask, nn_idx)
         else:
-            # sampling
-            ...
+            m = Categorical(logits=u)
+            nn_idx = m.sample()
+            log_prob = m.log_prob(nn_idx)
+
         temp = nn_idx.unsqueeze(-1).repeat(1, 1, emb_dim)
         self.last_ = torch.gather(node_embs, 1, temp)
 
         if len(mask[mask == 1]) == 0:
             self.first_ = self.last_
-        return nn_idx
+
+        return nn_idx, log_prob
 
     def reset(self):
         self.first_ = None

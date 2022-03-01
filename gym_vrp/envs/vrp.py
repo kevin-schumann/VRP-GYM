@@ -87,21 +87,22 @@ class DefaultVRPEnv(VRPEnv, Env):
         """
         assert actions.shape[0] == self.batch_size
 
-        self.visited[:, actions] = 1
+        self.visited[np.arange(len(actions)), actions.T] = 1
         self.step_count += 1
 
         # walking steps in current state
-        paths = np.hstack([self.prev_action, actions]).astype(
+        paths = np.hstack([self.prev_actions, actions]).astype(
             int
         )  # shape: batch_size x 2
 
         self.sampler.color_edges(paths)
-        self.prev_action = actions
+        self.prev_actions = np.array(actions)
+        done = self.__is_done()
 
         return (
             self.get_state(),
-            -np.mean(self.sampler.get_distances(paths), axis=0),
-            self.__is_done,
+            -self.sampler.get_distances(paths),
+            done,
             None,
         )
 
@@ -114,8 +115,8 @@ class DefaultVRPEnv(VRPEnv, Env):
 
         Returns:
             np.ndarray: Shape (num_graph, num_nodes, 4)
-            where the third dimension consists of the 
-            x, y coordinates, if the node is a depot, 
+            where the third dimension consists of the
+            x, y coordinates, if the node is a depot,
             and if it has been visted yet.
         """
 
@@ -124,14 +125,28 @@ class DefaultVRPEnv(VRPEnv, Env):
             [
                 self.sampler.get_graph_positions(),
                 np.zeros((self.batch_size, self.num_nodes)),
-                self.visited,
+                self.__generate_mask(),
             ]
         )
-
         # set if each node is depot or not (1 means node is depot)
         state[np.arange(len(state)), self.depots.T, 2] = 1
 
         return state
+
+    def __generate_mask(self):
+        depot_graphs_idxs = np.where(self.prev_actions == self.depots)[
+            0
+        ]  # doesnt work for multiple depots
+        depot_graphs_idxs_not = np.where(self.prev_actions != self.depots)[0]
+        self.visited[depot_graphs_idxs, self.depots[depot_graphs_idxs].squeeze()] = 1
+        self.visited[
+            depot_graphs_idxs_not, self.depots[depot_graphs_idxs_not].squeeze()
+        ] = 0
+        # make depot visitiable if all nodes are visited
+        done_graphs = np.where(np.all(self.visited, axis=1) == True)[0]
+        self.visited[done_graphs, self.depots[done_graphs].squeeze()] = 0
+
+        return self.visited
 
     def reset(
         self,
@@ -170,9 +185,13 @@ class DefaultVRPEnv(VRPEnv, Env):
     def __generate_graphs(self):
         self.visited = np.zeros(shape=(self.batch_size, self.num_nodes))
         self.sampler = VRPNetwork(
-            num_graphs=self.batch_size, num_nodes=self.num_nodes, num_depots=1,
+            num_graphs=self.batch_size,
+            num_nodes=self.num_nodes,
+            num_depots=1,
         )
 
         # Generate start points for each graph in batch
         self.depots = self.sampler.get_depots()
-        self.prev_action = self.depots[:, np.random.choice(self.depots.shape[1], 1)]
+        self.prev_actions = (
+            self.depots
+        )  # self.depots[:, np.random.choice(self.depots.shape[1], 1)]

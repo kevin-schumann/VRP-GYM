@@ -22,7 +22,7 @@ class GraphEncoder(nn.Module):
             hidden_dim (int): Number of neurons of the hidden layer of the fcl.
             num_attention_layers (int): Number of attention layers.
             num_heads (int): Number of heads in each attention layer
-            depot_input_dim (int): 
+            depot_input_dim (int):
             node_input_dim (int): _description_
         """
         super().__init__()
@@ -43,7 +43,7 @@ class GraphEncoder(nn.Module):
             ]
         )
 
-    def forward(self, x: torch.Tensor, depot_idx: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, depot_idx: torch.Tensor = None) -> torch.Tensor:
         """
         Calculates the node embedding for each node
         in each graph.
@@ -54,7 +54,7 @@ class GraphEncoder(nn.Module):
 
         Returns:
             torch.Tensor: Returns the embedding of each node in each graph.
-                Shape (num_graphs, num_nodes, embedding_dim). 
+                Shape (num_graphs, num_nodes, embedding_dim).
         """
 
         out = self.node_embed(x)
@@ -68,7 +68,7 @@ class GraphEncoder(nn.Module):
 class BatchNorm(nn.Module):
     """
     Coverts inputs of (N, L, C) to (N*L, C)
-    s.t we can apply BatchNorm for the 
+    s.t we can apply BatchNorm for the
     features C.
     """
 
@@ -112,11 +112,11 @@ class MultiHeadAttentionLayer(nn.Module):
         Forward pass
 
         Args:
-            x (torch.Tensor): Input tensor of shape 
+            x (torch.Tensor): Input tensor of shape
                 (num_graph, num_nodes, num_features)
 
         Returns:
-            torch.Tensor: Output of shape 
+            torch.Tensor: Output of shape
                 (num_graph, num_nodes, embedding_dim)
         """
         out = self.bn1(x + self.attention_layer(x, x, x)[0])
