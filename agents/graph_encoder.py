@@ -29,7 +29,7 @@ class GraphEncoder(nn.Module):
         torch.manual_seed(seed)
 
         # initial embeds ff layer for each nodes type
-        self.depot_embed = nn.Linear(depot_input_dim, embedding_dim)
+        # self.depot_embed = nn.Linear(depot_input_dim, embedding_dim)
         self.node_embed = nn.Linear(node_input_dim, embedding_dim)
 
         self.attention_layers = nn.ModuleList(
@@ -122,4 +122,4 @@ class MultiHeadAttentionLayer(nn.Module):
         out = self.bn1(x + self.attention_layer(x, x, x)[0])
         out = self.bn2(out + self.ff(out))
 
-        return x
+        return out

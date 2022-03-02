@@ -101,7 +101,7 @@ class DefaultVRPEnv(VRPEnv, Env):
 
         return (
             self.get_state(),
-            -self.sampler.get_distances(paths),
+            self.sampler.get_distances(paths),
             done,
             None,
         )
@@ -185,9 +185,7 @@ class DefaultVRPEnv(VRPEnv, Env):
     def __generate_graphs(self):
         self.visited = np.zeros(shape=(self.batch_size, self.num_nodes))
         self.sampler = VRPNetwork(
-            num_graphs=self.batch_size,
-            num_nodes=self.num_nodes,
-            num_depots=1,
+            num_graphs=self.batch_size, num_nodes=self.num_nodes, num_depots=1,
         )
 
         # Generate start points for each graph in batch

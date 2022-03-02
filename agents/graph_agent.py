@@ -1,3 +1,5 @@
+import csv
+import time
 from typing import Tuple
 import torch
 import torch.nn as nn
@@ -24,6 +26,8 @@ class VRPModel(nn.Module):
         seed,
     ):
         super().__init__()
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # self.device = "cuda:0"
         self.encoder = GraphEncoder(
             depot_input_dim=depot_dim,
             node_input_dim=node_dim,
@@ -46,17 +50,17 @@ class VRPModel(nn.Module):
         state = env.reset()
 
         done = False
-        acc_loss = torch.zeros(size=(state.shape[0],))
-        acc_log_prob = torch.zeros(size=(state.shape[0],))
+        acc_loss = torch.zeros(size=(state.shape[0],), device=self.device)
+        acc_log_prob = torch.zeros(size=(state.shape[0],), device=self.device)
 
         # play game
         while not done:
-            state = torch.Tensor(state)
+            state = torch.tensor(state, dtype=torch.float, device=self.device)
 
             # get prediction for current state
             actions, log_prob = self.model(state[:, :, :2], state[:, :, 3], rollout)
-            state, loss, done, _ = env.step(actions)
-            acc_loss += loss
+            state, loss, done, _ = env.step(actions.cpu().numpy())
+            acc_loss += torch.tensor(loss, dtype=torch.float, device=self.device)
             acc_log_prob += log_prob.squeeze()
 
         self.decoder.reset()
@@ -64,7 +68,7 @@ class VRPModel(nn.Module):
         return acc_loss, acc_log_prob  # shape (batch_size), shape (batch_size)
 
 
-class VRPAgent(nn.Module):
+class VRPAgent:
     def __init__(
         self,
         depot_dim: int,
@@ -73,13 +77,14 @@ class VRPAgent(nn.Module):
         hidden_dim: int = 512,
         num_attention_layers: int = 3,
         num_heads: int = 8,
-        lr: float = 0.05,
+        lr: float = 1e-4,
+        csv_path: str = "loss_log.csv",
         seed=69,
     ):
-        super().__init__()
-
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.csv_path = csv_path
 
+        device = "cuda:0"
         self.model = VRPModel(
             depot_dim=depot_dim,
             node_dim=node_dim,
@@ -88,7 +93,8 @@ class VRPAgent(nn.Module):
             num_attention_layers=num_attention_layers,
             num_heads=num_heads,
             seed=seed,
-        )
+        ).to(device)
+
         self.target_model = VRPModel(
             depot_dim=depot_dim,
             node_dim=node_dim,
@@ -97,25 +103,30 @@ class VRPAgent(nn.Module):
             num_attention_layers=num_attention_layers,
             num_heads=num_heads,
             seed=seed,
-        )
+        ).to(device)
+
         self.target_model.load_state_dict(self.model.state_dict())
-        self.model.to(device)
         self.target_model.eval()
-        self.target_model.to(device)
 
         self.opt = torch.optim.Adam(self.model.parameters(), lr=lr)
 
-    def train(self, env: VRPEnv, epochs: int = 100, eval_epochs: int = 10):
+    def train(self, env: VRPEnv, epochs: int = 100, eval_epochs: int = 1):
         logging.info("Start Training")
+        with open(self.csv_path, "w+", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Epoch", "Loss", "Advantage", "Time"])
+
+        start_time = time.time()
+
         for e in range(epochs):
             self.model.train()
-            self.opt.zero_grad()
 
             loss_m, loss_b, log_prob = self.step(env, (False, True))
             advantage = loss_m - loss_b
             loss = (advantage * log_prob).mean()
 
             # backpropagate
+            self.opt.zero_grad()
             loss.backward()
             self.opt.step()
 
@@ -123,8 +134,13 @@ class VRPAgent(nn.Module):
             self.baseline_update(env, eval_epochs)
 
             logging.info(
-                f"Epoch {e} finished - Loss: {loss_m.mean()}, Advantage: {advantage.mean()}"
+                f"Epoch {e} finished - Loss: {loss}, Advantage: {advantage.mean()} Dist: {loss_m.mean()}"
             )
+
+            # log training data
+            with open(self.csv_path, "w", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow([e, loss, advantage.mean(), time.time() - start_time])
 
     def step(self, env, rollouts: Tuple[bool, bool]):
         env.reset()
