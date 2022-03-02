@@ -110,11 +110,17 @@ class VRPAgent:
 
         self.opt = torch.optim.Adam(self.model.parameters(), lr=lr)
 
-    def train(self, env: VRPEnv, epochs: int = 100, eval_epochs: int = 1):
+    def train(
+        self,
+        env: VRPEnv,
+        epochs: int = 100,
+        eval_epochs: int = 1,
+        check_point_dir: str = "./check_points/",
+    ):
         logging.info("Start Training")
         with open(self.csv_path, "w+", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow(["Epoch", "Loss", "Advantage", "Time"])
+            writer.writerow(["Epoch", "Loss", "Cost", "Advantage", "Time"])
 
         start_time = time.time()
 
@@ -138,9 +144,22 @@ class VRPAgent:
             )
 
             # log training data
-            with open(self.csv_path, "w", newline="") as file:
+            with open(self.csv_path, "a", newline="") as file:
                 writer = csv.writer(file)
-                writer.writerow([e, loss, advantage.mean(), time.time() - start_time])
+                writer.writerow(
+                    [
+                        e,
+                        loss.item(),
+                        loss_m.mean().item(),
+                        advantage.mean().item(),
+                        time.time() - start_time,
+                    ]
+                )
+
+            if e % 50 == 0 and e != 0:
+                torch.save(
+                    self.model.state_dict(), check_point_dir + f"model_epoch_{e}.pt"
+                )
 
     def step(self, env, rollouts: Tuple[bool, bool]):
         env.reset()
