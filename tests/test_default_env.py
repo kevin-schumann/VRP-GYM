@@ -7,9 +7,12 @@ import math
 
 @pytest.fixture(scope="function", autouse=True)
 def setup():
+    seed = 69
+    np.random.seed(seed)
+
     pytest.node_num = 3
     pytest.graph_num = 2
-    pytest.env = DefaultVRPEnv(pytest.node_num, pytest.graph_num, 2, seed=69)
+    pytest.env = DefaultVRPEnv(pytest.node_num, pytest.graph_num, 2)
 
     y_coord = math.sqrt(3) / 2
     graph_one_coords = {
@@ -41,7 +44,7 @@ def test_step():
     actions = np.array([2, 2])[:, None]
     _, batched_reward, _, _ = pytest.env.step(actions)
     print(batched_reward.shape, np.array([-1.0, -4.0]).shape)
-    assert np.allclose(batched_reward, np.array([-1, -4]))
+    assert np.allclose(batched_reward, np.array([1, 4]))
 
 
 def test_state():

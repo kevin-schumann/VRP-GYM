@@ -4,8 +4,9 @@ import numpy as np
 
 
 class RandomAgent(nn.Module):
-    def __init__(self):
+    def __init__(self, seed: int = 69):
         super().__init__()
+        np.random.seed(seed)
 
     def forward(self, env) -> float:
         state = env.get_state()
@@ -25,4 +26,3 @@ class RandomAgent(nn.Module):
             acc_loss += torch.tensor(loss, dtype=torch.float)
 
         return acc_loss  # shape (batch_size)
-

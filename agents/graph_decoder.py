@@ -12,10 +12,8 @@ class GraphDecoder(nn.Module):
         num_heads: int = 8,
         v_dim: int = 128,
         k_dim: int = 128,
-        seed=69,
     ):
         super().__init__()
-        torch.manual_seed(seed)
 
         self._first_node = nn.Parameter(torch.rand(1, 1, emb_dim))
         self._last_node = nn.Parameter(torch.rand(1, 1, emb_dim))
@@ -70,7 +68,7 @@ class GraphDecoder(nn.Module):
         u = torch.tanh(q.bmm(k.transpose(-2, -1)) / emb_dim ** 0.5) * C
         u = u.masked_fill(mask.unsqueeze(1).bool(), float("-inf"))
 
-        log_prob = torch.zeros(size=(batch_size,), device="cuda:0")
+        log_prob = torch.zeros(size=(batch_size,))
         nn_idx = None
         if rollout:
             nn_idx = u.argmax(-1)

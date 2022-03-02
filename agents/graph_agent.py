@@ -23,7 +23,6 @@ class VRPModel(nn.Module):
         hidden_dim: int,
         num_attention_layers: int,
         num_heads: int,
-        seed,
     ):
         super().__init__()
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -35,10 +34,9 @@ class VRPModel(nn.Module):
             hidden_dim=hidden_dim,
             num_attention_layers=num_attention_layers,
             num_heads=num_heads,
-            seed=seed,
         )
         self.decoder = GraphDecoder(
-            emb_dim=emb_dim, num_heads=8, v_dim=emb_dim, k_dim=emb_dim, seed=seed
+            emb_dim=emb_dim, num_heads=8, v_dim=emb_dim, k_dim=emb_dim
         )
 
         self.model = lambda x, mask, rollout: self.decoder(
@@ -61,7 +59,7 @@ class VRPModel(nn.Module):
             actions, log_prob = self.model(state[:, :, :2], state[:, :, 3], rollout)
             state, loss, done, _ = env.step(actions.cpu().numpy())
             acc_loss += torch.tensor(loss, dtype=torch.float, device=self.device)
-            acc_log_prob += log_prob.squeeze()
+            acc_log_prob += log_prob.squeeze().to(self.device)
 
         self.decoder.reset()
 
@@ -81,10 +79,12 @@ class VRPAgent:
         csv_path: str = "loss_log.csv",
         seed=69,
     ):
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.csv_path = csv_path
 
-        device = "cuda:0"
         self.model = VRPModel(
             depot_dim=depot_dim,
             node_dim=node_dim,
@@ -92,7 +92,6 @@ class VRPAgent:
             hidden_dim=hidden_dim,
             num_attention_layers=num_attention_layers,
             num_heads=num_heads,
-            seed=seed,
         ).to(device)
 
         self.target_model = VRPModel(
@@ -102,7 +101,6 @@ class VRPAgent:
             hidden_dim=hidden_dim,
             num_attention_layers=num_attention_layers,
             num_heads=num_heads,
-            seed=seed,
         ).to(device)
 
         self.target_model.load_state_dict(self.model.state_dict())
