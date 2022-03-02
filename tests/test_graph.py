@@ -6,7 +6,8 @@ import pytest
 
 @pytest.fixture(scope="function", autouse=True)
 def setup():
-    np.random.seed(0)
+    seed = 69
+    np.random.seed(seed)
 
 
 def test_vrp_graph_init():

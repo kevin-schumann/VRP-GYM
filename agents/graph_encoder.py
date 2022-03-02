@@ -12,7 +12,6 @@ class GraphEncoder(nn.Module):
         hidden_dim: int = 512,
         num_attention_layers: int = 3,
         num_heads: int = 8,
-        seed=69,
     ):
         """
         Initalises the GraphEncoder
@@ -26,7 +25,6 @@ class GraphEncoder(nn.Module):
             node_input_dim (int): _description_
         """
         super().__init__()
-        torch.manual_seed(seed)
 
         # initial embeds ff layer for each nodes type
         # self.depot_embed = nn.Linear(depot_input_dim, embedding_dim)
