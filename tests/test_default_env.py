@@ -43,8 +43,8 @@ def test_init():
 def test_step():
     actions = np.array([2, 2])[:, None]
     _, batched_reward, _, _ = pytest.env.step(actions)
-    print(batched_reward.shape, np.array([-1.0, -4.0]).shape)
-    assert np.allclose(batched_reward, np.array([1, 4]))
+
+    assert np.allclose(batched_reward, np.array([1, 0]))
 
 
 def test_state():

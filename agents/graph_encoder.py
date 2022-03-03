@@ -6,7 +6,6 @@ import torch.nn.functional as F
 class GraphEncoder(nn.Module):
     def __init__(
         self,
-        depot_input_dim: int,
         node_input_dim: int,
         embedding_dim: int = 128,
         hidden_dim: int = 512,
@@ -25,7 +24,6 @@ class GraphEncoder(nn.Module):
             node_input_dim (int): _description_
         """
         super().__init__()
-
         # initial embeds ff layer for each nodes type
         # self.depot_embed = nn.Linear(depot_input_dim, embedding_dim)
         self.node_embed = nn.Linear(node_input_dim, embedding_dim)
@@ -41,7 +39,7 @@ class GraphEncoder(nn.Module):
             ]
         )
 
-    def forward(self, x: torch.Tensor, depot_idx: torch.Tensor = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Calculates the node embedding for each node
         in each graph.
@@ -56,7 +54,59 @@ class GraphEncoder(nn.Module):
         """
 
         out = self.node_embed(x)
+        for layer in self.attention_layers:
+            out = layer(out)
 
+        return out
+
+
+class GraphDemandEncoder(GraphEncoder):
+    def __init__(
+        self,
+        depot_input_dim: int,
+        node_input_dim: int,
+        embedding_dim: int = 128,
+        hidden_dim: int = 512,
+        num_attention_layers: int = 3,
+        num_heads: int = 8,
+    ):
+        super().__init__(
+            node_input_dim=node_input_dim,
+            embedding_dim=embedding_dim,
+            hidden_dim=hidden_dim,
+            num_attention_layers=num_attention_layers,
+            num_heads=num_heads,
+        )
+        self.node_f_dim = node_input_dim
+        self.depot_f_dim = depot_input_dim
+        self.emb_dim = embedding_dim
+
+        self.depot_embed = nn.Linear(depot_input_dim, embedding_dim)
+
+    def forward(self, x, depot_mask):
+        batch_size, num_nodes, _ = x.size()
+
+        not_depots = x[~depot_mask].view(batch_size, -1, self.node_f_dim)
+        depots = x[depot_mask].view(batch_size, -1, self.node_f_dim)
+
+        out = torch.cat(
+            [self.depot_embed(depots[:, :, :2]), self.node_embed(not_depots[:, :, :3])],
+            dim=1,
+        )
+        # move embeddings to original matrix pos
+        # depots shape: (batch, node_num, 1)
+        # out shape: (batch, node_num, 128)
+        temp = torch.empty_like(out)
+        num_depot = len(torch.where(depot_mask[0] == 1))
+
+        temp[depot_mask] = out[:, :num_depot, :].reshape(
+            batch_size * num_depot, self.emb_dim
+        )
+        temp[~depot_mask] = out[:, num_depot:, :].reshape(
+            (batch_size * (num_nodes - num_depot)), self.emb_dim
+        )
+
+        out = temp
         for layer in self.attention_layers:
             out = layer(out)
 

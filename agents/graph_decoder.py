@@ -31,6 +31,8 @@ class GraphDecoder(nn.Module):
 
         self.first_ = None
         self.last_ = None
+        self.first_step = True
+        self.num_heads = num_heads
 
     def forward(
         self,
@@ -62,7 +64,10 @@ class GraphDecoder(nn.Module):
         # Where last is the node from last decoding step.
         context = torch.cat([graph_emb, self.first_, self.last_], -1)
 
-        q, _ = self.attention(context, node_embs, node_embs)
+        attn_mask = mask.repeat(self.num_heads, 1).unsqueeze(1)
+        q, _ = self.attention(
+            context, node_embs, node_embs, attn_mask=attn_mask
+        )  # shape batchxnodexemb
         q = self._att_output(q)
 
         u = torch.tanh(q.bmm(k.transpose(-2, -1)) / emb_dim ** 0.5) * C
@@ -72,7 +77,6 @@ class GraphDecoder(nn.Module):
         nn_idx = None
         if rollout:
             nn_idx = u.argmax(-1)
-            # print(mask, nn_idx)
         else:
             m = Categorical(logits=u)
             nn_idx = m.sample()
@@ -80,11 +84,13 @@ class GraphDecoder(nn.Module):
         temp = nn_idx.unsqueeze(-1).repeat(1, 1, emb_dim)
         self.last_ = torch.gather(node_embs, 1, temp)
 
-        if len(mask[mask == 1]) == 0:
+        if self.first_step:
             self.first_ = self.last_
+            self.first_step = False
 
         return nn_idx, log_prob
 
     def reset(self):
         self.first_ = None
         self.last_ = None
+        self.first_step = True
