@@ -90,9 +90,13 @@ class GraphDemandEncoder(GraphEncoder):
         depots = x[depot_mask].view(batch_size, -1, self.node_f_dim)
 
         out = torch.cat(
-            [self.depot_embed(depots[:, :, :2]), self.node_embed(not_depots[:, :, :3])],
+            [
+                self.depot_embed(depots[:, :, : self.depot_f_dim]),
+                self.node_embed(not_depots[:, :, : self.node_f_dim]),
+            ],
             dim=1,
         )
+
         # move embeddings to original matrix pos
         # depots shape: (batch, node_num, 1)
         # out shape: (batch, node_num, 128)

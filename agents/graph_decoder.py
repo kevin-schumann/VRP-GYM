@@ -29,6 +29,9 @@ class GraphDecoder(nn.Module):
         self._kp = nn.Linear(emb_dim, emb_dim, bias=False)
         self._att_output = nn.Linear(emb_dim * 3, emb_dim, bias=False)
 
+        # project in context of [graph_emb, ]
+        self._context_proj = nn.Linear(emb_dim * 2 + 1, emb_dim * 3, bias=False)
+
         self.first_ = None
         self.last_ = None
         self.first_step = True
@@ -38,6 +41,7 @@ class GraphDecoder(nn.Module):
         self,
         node_embs: torch.Tensor,
         mask: torch.Tensor = None,
+        load: torch.Tensor = None,
         C: int = 10,
         rollout: bool = False,
     ):
@@ -62,12 +66,14 @@ class GraphDecoder(nn.Module):
 
         # Create context with first, last node and graph embedding.
         # Where last is the node from last decoding step.
-        context = torch.cat([graph_emb, self.first_, self.last_], -1)
+        if load is None:
+            context = torch.cat([graph_emb, self.first_, self.last_], -1)
+        else:
+            context = torch.cat([graph_emb, self.last_, load[:, None, None]], -1)
+            context = self._context_proj(context)
 
         attn_mask = mask.repeat(self.num_heads, 1).unsqueeze(1)
-        q, _ = self.attention(
-            context, node_embs, node_embs, attn_mask=attn_mask
-        )  # shape batchxnodexemb
+        q, _ = self.attention(context, node_embs, node_embs, attn_mask=attn_mask)
         q = self._att_output(q)
 
         u = torch.tanh(q.bmm(k.transpose(-2, -1)) / emb_dim ** 0.5) * C
@@ -94,3 +100,4 @@ class GraphDecoder(nn.Module):
         self.first_ = None
         self.last_ = None
         self.first_step = True
+

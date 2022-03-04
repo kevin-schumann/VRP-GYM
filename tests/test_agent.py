@@ -1,6 +1,6 @@
 import pytest
 import torch
-from gym_vrp.envs.vrp import DefaultVRPEnv
+from gym_vrp.envs.vrp import VRPEnv
 from agents.graph_encoder import GraphEncoder, GraphDemandEncoder
 from agents.graph_decoder import GraphDecoder
 from agents.random_agent import RandomAgent
@@ -15,7 +15,7 @@ def setup():
 
 
 def test_encoder():
-    env = DefaultVRPEnv(num_nodes=8, batch_size=2, num_draw=1)
+    env = VRPEnv(num_nodes=8, batch_size=2, num_draw=1)
     state = torch.from_numpy(env.reset()).float()
 
     encoder = GraphEncoder(node_input_dim=2)
@@ -28,7 +28,7 @@ def test_decoder():
     num_graphs = 2
     num_nodes = 8
 
-    env = DefaultVRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1)
+    env = VRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1)
 
     # extract important state info
     state = torch.from_numpy(env.reset()).float()
@@ -53,7 +53,7 @@ def test_random_agent():
     num_graphs = 2
     num_nodes = 8
 
-    env = DefaultVRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
+    env = VRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
     agent = RandomAgent()
     loss = agent(env)
 

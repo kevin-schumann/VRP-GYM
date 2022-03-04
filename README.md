@@ -15,7 +15,7 @@ An easy to use, understand and extend Vehicle Routing Problem Environment build 
    * Default VRP (Start on Depot and have to return to it)
    * Inventory Routing Problem (Vehicle is responsible for satisfying the demands in each delivery point)
 
-The code can be easily extended to support other variants of the VRP Problem. We also provide a state of the art attention based graph agent inspired by [ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!](https://arxiv.org/pdf/1803.08475.pdf) and a random decision based agent. We evaluated the attention agent against the random agent on all three variant environments. The visualized results of the training and evaluation can be found in `notebooks/visualization.ipynb`.
+The code can be easily extended to support other variants of the VRP Problem. We also provide a state of the art attention based graph agent inspired by [ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!](https://arxiv.org/pdf/1803.08475.pdf) and a random decision based agent. We evaluated the attention agent against the random agent on all three variant environments. The visualized results of the training and evaluation can be found in `notebooks/visualization_results.ipynb`.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -79,7 +79,7 @@ For the py file different arguments can be provided when used to evaluate a mode
 * --num_draw: Number of graphs that should be included in the video. __*Default: 6*__
 * --csv_path: Path where the results should be saved: __*Default: 'reproduction_results'*__
 * --model_path: Path to the train file of the model to evaluate against Random Agent
-* --env_type: The environment variant that should be used. __Values: ['TSP', 'VRP', 'DEMANDVRP'].__ __*Default: 'TSP'*__
+* --env_type: The environment variant that should be used. __Values: ['TSP', 'VRP', 'IRP'].__ __*Default: 'TSP'*__
 
 This script also produces a video of the evaluated Agent, which will be saved in the `./Video` folder.
 

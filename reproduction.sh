@@ -1,7 +1,8 @@
 TSPModel=''
 VRPModel=''
-for data in TSP,$TSPMODEL VRP,$VRPModel DEMANDVRP,$DEMANDModel do
+IRPModel=''
+for data in TSP,$TSPMODEL VRP,$VRPModel IRP,$DEMANDModel do
     IFS=',' read  env model <<< "${data}"
     python reproduce.py --env_type $env \
-            --net $model
+            --model_path $model
 done

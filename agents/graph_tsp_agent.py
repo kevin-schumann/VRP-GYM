@@ -1,19 +1,22 @@
 import csv
+import logging
+import os
 import time
+from copy import deepcopy
 from typing import Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
-from .graph_encoder import GraphDemandEncoder, GraphEncoder
-from .graph_decoder import GraphDecoder
-from copy import deepcopy
 from scipy import stats
-import numpy as np
-import logging
+
+from .graph_decoder import GraphDecoder
+from .graph_encoder import GraphEncoder
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-class VRPModel(nn.Module):
+class TSPModel(nn.Module):
     def __init__(
         self,
         node_dim: int,
@@ -40,96 +43,19 @@ class VRPModel(nn.Module):
             x, mask, rollout=rollout
         )  # remove encoding and make it do it once
 
-        # self.model = lambda x, mask, rollout: print(
-        #     x.data_ptr()
-        # )  # remove encoding and make it do it once
-
     def forward(self, env, rollout=False) -> Tuple[float, float]:
-        # Do first step and then while loop till env is done
-        state = torch.tensor(env.get_state(), dtype=torch.float, device=self.device)
-
         done = False
+        state = torch.tensor(env.get_state(), dtype=torch.float, device=self.device)
         acc_loss = torch.zeros(size=(state.shape[0],), device=self.device)
         acc_log_prob = torch.zeros(size=(state.shape[0],), device=self.device)
 
-        # play game
+        emb = self.encoder(x=state[:, :, :2])
+
         while not done:
+            actions, log_prob = self.decoder(
+                node_embs=emb, mask=state[:, :, 3], rollout=rollout
+            )
 
-            emb = self.encoder(state[:, :, :2])
-            # get prediction for current state
-            actions, log_prob = self.model(emb, state[:, :, 3], rollout)
-            state, loss, done, _ = env.step(actions.cpu().numpy())
-            acc_loss += torch.tensor(loss, dtype=torch.float, device=self.device)
-            acc_log_prob += log_prob.squeeze().to(self.device)
-
-            state = torch.tensor(env.get_state(), dtype=torch.float, device=self.device)
-        self.decoder.reset()
-
-        return acc_loss, acc_log_prob  # shape (batch_size), shape (batch_size)
-
-
-class VRPDemandModel(VRPModel):
-    def __init__(
-        self,
-        depot_dim: int,
-        node_dim: int,
-        emb_dim: int,
-        hidden_dim: int,
-        num_attention_layers: int,
-        num_heads: int,
-    ):
-        """
-        The VRPDemandModel is used in companionship with the VRPDemandEnv
-        to solve the capacited vehicle routing problem.
-
-        Args:
-            depot_dim (int): Input dimension of a depot node.
-            node_dim (int): Input dimension of a regular graph node.
-            emb_dim (int): Size of a vector in the embedding space.
-            hidden_dim (int): Dimension of the hidden layers of the 
-                ff-network layers within the graph-encoder.
-            num_attention_layers (int): Number of attention layers 
-                for both the graph-encoder and -decoder.
-            num_heads (int): Number of attention heads in each 
-                MultiHeadAttentionLayer for both the graph-encoder and -decoder.
-        """
-        super().__init__(
-            node_dim=node_dim,
-            emb_dim=emb_dim,
-            hidden_dim=hidden_dim,
-            num_attention_layers=num_attention_layers,
-            num_heads=num_heads,
-        )
-
-        self.encoder = GraphDemandEncoder(
-            depot_input_dim=depot_dim,
-            node_input_dim=node_dim,
-            embedding_dim=emb_dim,
-            hidden_dim=hidden_dim,
-            num_attention_layers=num_attention_layers,
-            num_heads=num_heads,
-        )
-
-    def forward(self, env, rollout=False) -> Tuple[float, float]:
-        """
-
-        Args:
-            env (_type_): _description_
-            rollout (bool, optional): _description_. Defaults to False.
-
-        Returns:
-            Tuple[float, float]: _description_
-        """
-        state = torch.tensor(env.get_state(), dtype=torch.float, device=self.device)
-        done = False
-        acc_loss = torch.zeros(size=(state.shape[0],), device=self.device)
-        acc_log_prob = torch.zeros(size=(state.shape[0],), device=self.device)
-
-        # play game
-        emb = self.encoder(state[:, :, :3], state[:, :, 3].bool())
-        while not done:
-
-            actions, log_prob = self.model(emb, state[:, :, 4], rollout)
             state, loss, done, _ = env.step(actions.cpu().numpy())
 
             acc_loss += torch.tensor(loss, dtype=torch.float, device=self.device)
@@ -142,10 +68,10 @@ class VRPDemandModel(VRPModel):
         return acc_loss, acc_log_prob  # shape (batch_size), shape (batch_size)
 
 
-class VRPAgent:
+class TSPAgent:
     def __init__(
         self,
-        node_dim: int,
+        node_dim: int = 2,
         emb_dim: int = 128,
         hidden_dim: int = 512,
         num_attention_layers: int = 3,
@@ -159,7 +85,7 @@ class VRPAgent:
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.csv_path = csv_path
-        self.model = VRPModel(
+        self.model = TSPModel(
             node_dim=node_dim,
             emb_dim=emb_dim,
             hidden_dim=hidden_dim,
@@ -167,7 +93,7 @@ class VRPAgent:
             num_heads=num_heads,
         ).to(self.device)
 
-        self.target_model = VRPModel(
+        self.target_model = TSPModel(
             node_dim=node_dim,
             emb_dim=emb_dim,
             hidden_dim=hidden_dim,
@@ -194,7 +120,7 @@ class VRPAgent:
 
         start_time = time.time()
 
-        for e in range(4000):
+        for e in range(epochs):
             self.model.train()
 
             loss_m, loss_b, log_prob = self.step(env, (False, True))
@@ -227,11 +153,16 @@ class VRPAgent:
                     ]
                 )
 
-            if e % 50 == 0 and e != 0:
-                torch.save(
-                    self.model.state_dict(),
-                    check_point_dir + f"model_epoch__tsp_{e}.pt",
-                )
+            self.save_model(episode=e, check_point_dir=check_point_dir)
+
+    def save_model(self, episode: int, check_point_dir: str) -> None:
+        if not os.path.exists(check_point_dir):
+            os.makedirs(check_point_dir)
+
+        if episode % 50 == 0 and episode != 0:
+            torch.save(
+                self.model.state_dict(), check_point_dir + f"model_epoch_{episode}.pt",
+            )
 
     def step(self, env, rollouts: Tuple[bool, bool]):
         env.reset()
@@ -285,49 +216,3 @@ class VRPAgent:
             print("replacing baceline")
             self.target_model.load_state_dict(self.model.state_dict())
 
-
-class VRPDemandAgent(VRPAgent):
-    def __init__(
-        self,
-        depot_dim: int,
-        node_dim: int,
-        emb_dim: int = 128,
-        hidden_dim: int = 512,
-        num_attention_layers: int = 3,
-        num_heads: int = 8,
-        lr: float = 1e-4,
-        csv_path: str = "loss_log.csv",
-        seed=69,
-    ):
-        super().__init__(
-            node_dim=node_dim,
-            emb_dim=emb_dim,
-            hidden_dim=hidden_dim,
-            num_attention_layers=num_attention_layers,
-            num_heads=num_heads,
-            lr=lr,
-            csv_path=csv_path,
-            seed=seed,
-        )
-        self.model = VRPDemandModel(
-            depot_dim=depot_dim,
-            node_dim=node_dim,
-            emb_dim=emb_dim,
-            hidden_dim=hidden_dim,
-            num_attention_layers=num_attention_layers,
-            num_heads=num_heads,
-        ).to(self.device)
-
-        self.target_model = VRPDemandModel(
-            depot_dim=depot_dim,
-            node_dim=node_dim,
-            emb_dim=emb_dim,
-            hidden_dim=hidden_dim,
-            num_attention_layers=num_attention_layers,
-            num_heads=num_heads,
-        ).to(self.device)
-
-        self.target_model.load_state_dict(self.model.state_dict())
-        self.target_model.eval()
-
-        self.opt = torch.optim.Adam(self.model.parameters(), lr=lr)

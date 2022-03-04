@@ -2,12 +2,15 @@
 Reproduction Script for all results presented
 """
 import torch
-from gym_vrp.envs.vrp import DefaultVRPEnv, DefaultTSPEnv, DemandVRPEnv
-from agents.graph_agent import VRPAgent, VRPDemandAgent
-from agents.random_agent import RandomAgent
+from gym_vrp.envs.vrp import VRPEnv, TSPEnv, IRPEnv
+from agents import TSPAgent, IRPAgent, RandomAgent, VRPAgent
 import csv
 from argparse import ArgumentParser
 from copy import deepcopy
+
+
+env_dict = {"TSP": TSPEnv, "VRP": VRPEnv, "IRP": IRPEnv}
+agent_dict = {"TSP": TSPAgent, "VRP": TSPAgent, "IRP": IRPAgent}
 
 
 def reproduce(
@@ -23,31 +26,32 @@ def reproduce(
     with open(csv_path, "w+", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Model", "Seed", "Mean Distance"])
-    # Evaluate Default Env
+
     for seed in seeds:
-        env = DemandVRPEnv(
+        env = env_dict[env_type](
             num_nodes=num_nodes,
             batch_size=batch_size,
             num_draw=num_draw,
             seed=seed,
-            video_path=f"random_{seed}_20.mp4",
+            video_save_path=f"./videos/agent_{env_type}_{seed}.mp4",
         )
 
-        # env_r = deepcopy(env)
+        env_r = deepcopy(env)
+        env_r.video_save_path = None
 
-        # vrp_agent = VRPDemandAgent(depot_dim=2, node_dim=3, seed=seed)
-        # vrp_agent.model.load_state_dict(torch.load(model_path))
+        agent = agent_dict[env_type](seed=seed)
+        agent.model.load_state_dict(torch.load(model_path))
 
         random_agent = RandomAgent(seed=seed)
         random_agent.eval()
 
-        # loss_a = vrp_agent.evaluate(env)
-        loss_r = random_agent(env)
+        loss_a = agent.evaluate(env)
+        loss_r = random_agent(env_r)
 
         with open(csv_path, "a", newline="") as file:
             writer = csv.writer(file)
-            # writer.writerow(["Attention Agent", seed, loss_a.mean().item()])
-            writer.writerow(["Random Agent", seed, loss_r.mean().item()])
+            writer.writerow([f"{env_type}-Agent", seed, loss_a.mean().item()])
+            writer.writerow([f"{env_type}-Random-Agent", seed, loss_r.mean().item()])
 
 
 if __name__ == "__main__":

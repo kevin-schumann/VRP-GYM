@@ -1,5 +1,5 @@
 import pytest
-from gym_vrp.envs.vrp import DefaultVRPEnv
+from gym_vrp.envs.vrp import VRPEnv
 import numpy as np
 import networkx as nx
 import math
@@ -12,7 +12,7 @@ def setup():
 
     pytest.node_num = 3
     pytest.graph_num = 2
-    pytest.env = DefaultVRPEnv(pytest.node_num, pytest.graph_num, 2)
+    pytest.env = VRPEnv(pytest.node_num, pytest.graph_num, 2)
 
     y_coord = math.sqrt(3) / 2
     graph_one_coords = {

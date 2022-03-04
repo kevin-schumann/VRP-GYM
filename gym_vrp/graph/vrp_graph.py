@@ -37,7 +37,8 @@ class VRPGraph:
         nx.set_node_attributes(self.graph, one_hot_dict, "depot")
 
         # set demand for each node except depots
-        demand = np.random.rand(num_nodes, 1)
+        C = 0.2449 * num_nodes + 26.12  # linear reg on values from paper
+        demand = np.random.uniform(low=1, high=10, size=(num_nodes, 1)) / C
         demand[self.depots] = 0
         node_demand = {i: d for i, d in enumerate(demand)}
         nx.set_node_attributes(self.graph, node_demand, "demand")
