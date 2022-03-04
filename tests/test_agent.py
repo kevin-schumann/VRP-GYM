@@ -58,42 +58,57 @@ def test_random_agent():
     num_graphs = 2
     num_nodes = 8
 
-    env = VRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
+    env = VRPEnv(
+        num_nodes=num_nodes,
+        batch_size=num_graphs,
+        num_draw=1,
+    )
     agent = RandomAgent()
     loss = agent(env)
 
-    assert np.isclose([loss.mean().item()], [5.585874557495117])
+    assert np.isclose([loss.mean().item()], [-5.585874557495117])
 
 
 def test_tsp_agent():
     num_graphs = 2
     num_nodes = 4
 
-    env = TSPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
+    env = TSPEnv(
+        num_nodes=num_nodes,
+        batch_size=num_graphs,
+        num_draw=1,
+    )
     agent = TSPAgent()
     loss, _, _ = agent.step(env, [True, True])
 
-    assert np.isclose([loss.mean().item()], [1.5130789279937744])
+    assert np.isclose([loss.mean().item()], [-1.5130789279937744])
 
 
 def test_vrp_agent():
     num_graphs = 2
     num_nodes = 4
 
-    env = VRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
+    env = VRPEnv(
+        num_nodes=num_nodes,
+        batch_size=num_graphs,
+        num_draw=1,
+    )
     agent = VRPAgent()
     loss, _, _ = agent.step(env, [True, True])
 
-    assert np.isclose([loss.mean().item()], [1.952601671218872])
+    assert np.isclose([loss.mean().item()], [-1.952601671218872])
 
 
 def test_irp_agent():
     num_graphs = 2
     num_nodes = 4
 
-    env = IRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
+    env = IRPEnv(
+        num_nodes=num_nodes,
+        batch_size=num_graphs,
+        num_draw=1,
+    )
     agent = IRPAgent()
     loss, _, _ = agent.step(env, [True, True])
 
-    assert np.isclose([loss.mean().item()], [2.9770922660827637])
-
+    assert np.isclose([loss.mean().item()], [-2.9770922660827637])
