@@ -18,6 +18,7 @@ An easy to use, understand and extend Vehicle Routing Problem Environment build 
 The code can be easily extended to support other variants of the VRP Problem. We also provide a state of the art attention based graph agent inspired by [ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!](https://arxiv.org/pdf/1803.08475.pdf) and a random decision based agent. We evaluated the attention agent against the random agent on all three variant environments. The visualized results of the training and evaluation can be found in `notebooks/visualization_results.ipynb`.
 
 ![](./static/landing_video/VRP_landing.gif)
+![](./static/landing_video/IRP_landing.gif)
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -71,7 +72,7 @@ To reproduce our results just run the `reproduction.sh`script inside the environ
 ```sh
 ./reproduction.sh
 ```
-We used a Nvidia GTX 1070 TI with 16GB RAM to evaluate the agent on our envs.
+We used a Nvidia GTX 1070 TI and 16GB RAM to evaluate the agent on our envs.
 
 The above script will call the `reproduction.py` file with different environments.
 For the py file different arguments can be provided when used to evaluate a model, which are default set to the ones we used to evaluate our implementation.
@@ -83,7 +84,7 @@ For the py file different arguments can be provided when used to evaluate a mode
 * --model_path: Path to the train file of the model to evaluate against Random Agent
 * --env_type: The environment variant that should be used. __Values: ['TSP', 'VRP', 'IRP'].__ __*Default: 'TSP'*__
 
-This script also produces a video of the evaluated Agent, which will be saved in the `./Video` folder.
+This script also produces a video of the evaluated agent, which will be saved in the `./Video` folder.
 
 <!-- CONTACT -->
 ## Contact
