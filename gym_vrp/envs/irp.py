@@ -93,7 +93,7 @@ class IRPEnv(TSPEnv):
         done = self.is_done()
         return (
             self.get_state(),
-            self.sampler.get_distances(traversed_edges),
+            -self.sampler.get_distances(traversed_edges),
             done,
             None,
         )

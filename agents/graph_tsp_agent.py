@@ -176,7 +176,7 @@ class TSPAgent:
             self.model.train()
 
             loss_m, loss_b, log_prob = self.step(env, (False, True))
-            advantage = loss_m - loss_b
+            advantage = (loss_m - loss_b) * -1
             loss = (advantage * log_prob).mean()
 
             # backpropagate
@@ -296,7 +296,7 @@ class TSPAgent:
 
         current_model_cost = torch.cat(current_model_cost)
         baseline_model_cost = torch.cat(baseline_model_cost)
-        advantage = (current_model_cost - baseline_model_cost).mean()
+        advantage = ((current_model_cost - baseline_model_cost) * -1).mean()
         _, p_value = stats.ttest_rel(
             current_model_cost.tolist(), baseline_model_cost.tolist()
         )
