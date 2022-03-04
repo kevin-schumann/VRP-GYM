@@ -17,6 +17,8 @@ An easy to use, understand and extend Vehicle Routing Problem Environment build 
 
 The code can be easily extended to support other variants of the VRP Problem. We also provide a state of the art attention based graph agent inspired by [ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!](https://arxiv.org/pdf/1803.08475.pdf) and a random decision based agent. We evaluated the attention agent against the random agent on all three variant environments. The visualized results of the training and evaluation can be found in `notebooks/visualization_results.ipynb`.
 
+![](./static/landing_video/VRP_landing.gif)
+
 <!-- GETTING STARTED -->
 ## Getting Started
 
@@ -41,7 +43,7 @@ To install the required packages we recommend using [Conda](https://docs.conda.i
 ### Tests
 1. Go to the project directory and run
    ```sh
-    pytest tests/*
+    pytest tests/
    ```
 
 <!-- USAGE EXAMPLES -->
