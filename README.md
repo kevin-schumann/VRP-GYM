@@ -73,7 +73,7 @@ We used a Nvidia GTX 1070 TI with 16GB RAM to evaluate the agent on our envs.
 
 The above script will call the `reproduction.py` file with different environments.
 For the py file different arguments can be provided when used to evaluate a model, which are default set to the ones we used to evaluate our implementation.
-* --seeds: The used seeds for the env generation. __*Default: [69,88,123,420]*__
+* --seeds: The used seeds for the env generation. __*Default: [69,123,420]*__
 * --batch_size: The used batch size. __*Default: 512*__
 * --num_nodes: Number of nodes in the evaluation graphs. __*Default: 20*__
 * --num_draw: Number of graphs that should be included in the video. __*Default: 6*__
