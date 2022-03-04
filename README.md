@@ -77,6 +77,7 @@ For training seeds and process see `train_models.py` and for evaluation seeds se
 ./reproduction.sh
 ```
 NOTE: The models were trained and stored using CUDA, therefore they can only be loaded under CUDA.
+
 We used a Nvidia GTX 1070 TI and 16GB RAM to evaluate the agent on our envs.
 
 The above script will call the `reproduction.py` file with different environments.
