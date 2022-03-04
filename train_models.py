@@ -1,8 +1,7 @@
 from gym_vrp.envs import VRPEnv, IRPEnv, TSPEnv
 from agents import TSPAgent, IRPAgent, VRPAgent
-import time
 
-seeds = [69, 123, 420]
+seeds = [69, 123]
 num_nodes = [20, 30, 40]
 batch_size = 256
 

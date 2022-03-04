@@ -1,9 +1,16 @@
 import pytest
 import torch
-from gym_vrp.envs.vrp import VRPEnv
-from agents.graph_encoder import GraphEncoder, GraphDemandEncoder
-from agents.graph_decoder import GraphDecoder
-from agents.random_agent import RandomAgent
+
+from agents import (
+    IRPAgent,
+    TSPAgent,
+    VRPAgent,
+    RandomAgent,
+    GraphEncoder,
+    GraphDemandEncoder,
+    GraphDecoder,
+)
+from gym_vrp.envs import IRPEnv, TSPEnv, VRPEnv
 import numpy as np
 
 
@@ -43,10 +50,8 @@ def test_decoder():
     # decode with initial mask
     mask = torch.zeros(size=(num_graphs, num_nodes))
     next_node, _ = decoder(embs, mask)
-    print(next_node)
-    assert torch.equal(
-        next_node, torch.tensor([[5], [4]], dtype=torch.long)
-    ) or torch.equal(next_node, torch.tensor([[1], [5]], dtype=torch.long))
+
+    assert torch.equal(next_node, torch.tensor([[5], [7]], dtype=torch.long))
 
 
 def test_random_agent():
@@ -57,5 +62,38 @@ def test_random_agent():
     agent = RandomAgent()
     loss = agent(env)
 
-    assert np.isclose([loss.mean().item()], [4.857976913452148])
+    assert np.isclose([loss.mean().item()], [5.585874557495117])
+
+
+def test_tsp_agent():
+    num_graphs = 2
+    num_nodes = 4
+
+    env = TSPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
+    agent = TSPAgent()
+    loss, _, _ = agent.step(env, [True, True])
+
+    assert np.isclose([loss.mean().item()], [1.5130789279937744])
+
+
+def test_vrp_agent():
+    num_graphs = 2
+    num_nodes = 4
+
+    env = VRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
+    agent = VRPAgent()
+    loss, _, _ = agent.step(env, [True, True])
+
+    assert np.isclose([loss.mean().item()], [1.952601671218872])
+
+
+def test_irp_agent():
+    num_graphs = 2
+    num_nodes = 4
+
+    env = IRPEnv(num_nodes=num_nodes, batch_size=num_graphs, num_draw=1,)
+    agent = IRPAgent()
+    loss, _, _ = agent.step(env, [True, True])
+
+    assert np.isclose([loss.mean().item()], [2.9770922660827637])
 

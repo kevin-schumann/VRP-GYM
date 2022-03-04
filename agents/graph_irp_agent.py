@@ -20,7 +20,7 @@ class IRPModel(TSPModel):
         num_heads: int,
     ):
         """
-        The VRPDemandModel is used in companionship with the VRPDemandEnv
+        The IRPModel is used in companionship with the IRPEnv
         to solve the capacited vehicle routing problem.
 
         Args:
@@ -53,13 +53,13 @@ class IRPModel(TSPModel):
 
     def forward(self, env, rollout=False) -> Tuple[float, float]:
         """
-
+        Forward method of the model
         Args:
-            env (_type_): _description_
-            rollout (bool, optional): _description_. Defaults to False.
+            env (gym.Env): environment which the agent has to solve.
+            rollout (bool, optional): policy decision. Defaults to False.
 
         Returns:
-            Tuple[float, float]: _description_
+            Tuple[float, float]: accumulated loss and log probabilities.
         """
         done = False
         # state = torch.tensor(env.get_state(), dtype=torch.float, device=self.device)
@@ -115,6 +115,19 @@ class IRPAgent(TSPAgent):
         csv_path: str = "loss_log.csv",
         seed=69,
     ):
+        """_summary_
+
+        Args:
+            depot_dim (int, optional): _description_. Defaults to 2.
+            node_dim (int, optional): _description_. Defaults to 3.
+            emb_dim (int, optional): _description_. Defaults to 128.
+            hidden_dim (int, optional): _description_. Defaults to 512.
+            num_attention_layers (int, optional): _description_. Defaults to 3.
+            num_heads (int, optional): _description_. Defaults to 8.
+            lr (float, optional): _description_. Defaults to 1e-4.
+            csv_path (str, optional): _description_. Defaults to "loss_log.csv".
+            seed (int, optional): _description_. Defaults to 69.
+        """
         super().__init__(
             node_dim=node_dim,
             emb_dim=emb_dim,

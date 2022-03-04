@@ -1,4 +1,5 @@
-from gym_vrp.graph.graph import VRPGraph, VRPNetwork, NodeRange
+from gym_vrp.graph.vrp_graph import VRPGraph
+from gym_vrp.graph.vrp_network import VRPNetwork
 import networkx as nx
 import numpy as np
 import pytest

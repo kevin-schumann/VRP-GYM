@@ -30,7 +30,6 @@ class TSPEnv(Env):
         batch_size: int = 128,
         num_draw: int = 6,
         seed: int = 69,
-        video_save_path: str = None,
     ):
         """
         Args:
@@ -54,10 +53,7 @@ class TSPEnv(Env):
 
         # init video recorder
         self.draw_idxs = np.random.choice(batch_size, num_draw, replace=False)
-        self.video_path = video_save_path
-        if video_save_path is not None:
-            self.vid = VideoRecorder(self, video_save_path)
-            self.vid.frames_per_sec = 1
+        self.video_save_path = None
 
         self.generate_graphs()
 
@@ -93,7 +89,7 @@ class TSPEnv(Env):
 
         self.current_location = np.array(actions)
 
-        if self.video_path is not None:
+        if self.video_save_path is not None:
             self.vid.capture_frame()
 
         done = self.is_done()
@@ -183,3 +179,9 @@ class TSPEnv(Env):
         this methods renders n random graphs from the batch.
         """
         return self.sampler.draw(self.draw_idxs)
+
+    def enable_video_capturing(self, video_save_path: str):
+        self.video_save_path = video_save_path
+        if self.video_save_path is not None:
+            self.vid = VideoRecorder(self, self.video_save_path)
+            self.vid.frames_per_sec = 1

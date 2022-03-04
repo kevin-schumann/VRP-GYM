@@ -31,7 +31,6 @@ class IRPEnv(TSPEnv):
         batch_size: int = 128,
         num_draw: int = 6,
         seed: int = 69,
-        video_path: str = None,
     ):
         """
         Args:
@@ -40,15 +39,9 @@ class IRPEnv(TSPEnv):
             num_draw (int, optional): When calling the render num_draw graphs will be rendered. 
                 Defaults to 6.
             seed (int, optional): Seed of the environment. Defaults to 69.
-            video_save_path (str, optional): When set a video of the interactions with the 
-                environment is saved at the set location. Defaults to None.
         """
         super().__init__(
-            num_nodes=num_nodes,
-            batch_size=batch_size,
-            num_draw=num_draw,
-            seed=seed,
-            video_save_path=video_path,
+            num_nodes=num_nodes, batch_size=batch_size, num_draw=num_draw, seed=seed,
         )
 
         self.load = np.ones(shape=(batch_size,))
@@ -94,7 +87,7 @@ class IRPEnv(TSPEnv):
 
         self.current_location = np.array(actions)
 
-        if self.video_path is not None:
+        if self.video_save_path is not None:
             self.vid.capture_frame()
 
         done = self.is_done()
@@ -168,7 +161,10 @@ class IRPEnv(TSPEnv):
         """
         self.visited = np.zeros(shape=(self.batch_size, self.num_nodes))
         self.sampler = VRPNetwork(
-            num_graphs=self.batch_size, num_nodes=self.num_nodes, num_depots=1,
+            num_graphs=self.batch_size,
+            num_nodes=self.num_nodes,
+            num_depots=1,
+            plot_demand=True,
         )
 
         # set current location to the depots

@@ -6,7 +6,7 @@ class VRPGraph:
 
     graph: nx.Graph = nx.Graph()
 
-    def __init__(self, num_nodes: int, num_depots: int):
+    def __init__(self, num_nodes: int, num_depots: int, plot_demand: bool = False):
         """
         Creates a fully connected graph with node_num nodes
         and depot num depots. Coordinates of each node
@@ -18,6 +18,7 @@ class VRPGraph:
         """
         self.num_nodes = num_nodes
         self.num_depots = num_depots
+        self.plot_demand = plot_demand
 
         # offset for node labels
         self.offset = offset = np.array([0, 0.065])
@@ -68,19 +69,31 @@ class VRPGraph:
         # draw nodes according to color and position attribute
         pos = nx.get_node_attributes(self.graph, "coordinates")
         node_colors = nx.get_node_attributes(self.graph, "node_color").values()
-        nx.draw_networkx_nodes(self.graph, pos, node_color=node_colors, ax=ax)
+        nx.draw_networkx_nodes(
+            self.graph, pos, node_color=node_colors, ax=ax, node_size=100
+        )
 
         # draw edges that where visited
         edges = [x for x in self.graph.edges(data=True) if x[2]["visited"]]
         nx.draw_networkx_edges(
-            self.graph, pos, alpha=0.5, edgelist=edges, edge_color="red", ax=ax
+            self.graph,
+            pos,
+            alpha=0.5,
+            edgelist=edges,
+            edge_color="red",
+            ax=ax,
+            width=1.5,
         )
 
         # draw demand above the node
-        demand_label_pos = {k: (v + self.offset) for k, v in pos.items()}
-        node_demand = nx.get_node_attributes(self.graph, "demand")
-        node_demand = {k: np.round(v, 2)[0] for k, v in node_demand.items()}
-        nx.draw_networkx_labels(self.graph, demand_label_pos, labels=node_demand, ax=ax)
+
+        if self.plot_demand:
+            demand_label_pos = {k: (v + self.offset) for k, v in pos.items()}
+            node_demand = nx.get_node_attributes(self.graph, "demand")
+            node_demand = {k: np.round(v, 2)[0] for k, v in node_demand.items()}
+            nx.draw_networkx_labels(
+                self.graph, demand_label_pos, labels=node_demand, ax=ax
+            )
 
     def visit_edge(self, source_node: int, target_node: int) -> None:
         """

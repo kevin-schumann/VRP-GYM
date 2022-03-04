@@ -13,7 +13,7 @@ from scipy import stats
 from .graph_decoder import GraphDecoder
 from .graph_encoder import GraphEncoder
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class TSPModel(nn.Module):
@@ -25,6 +25,21 @@ class TSPModel(nn.Module):
         num_attention_layers: int,
         num_heads: int,
     ):
+        """
+        The TSPModel is used in companionship with the TSPEnv
+        to solve the capacited vehicle routing problem.
+
+        Args:
+            depot_dim (int): Input dimension of a depot node.
+            node_dim (int): Input dimension of a regular graph node.
+            emb_dim (int): Size of a vector in the embedding space.
+            hidden_dim (int): Dimension of the hidden layers of the 
+                ff-network layers within the graph-encoder.
+            num_attention_layers (int): Number of attention layers 
+                for both the graph-encoder and -decoder.
+            num_heads (int): Number of attention heads in each 
+                MultiHeadAttentionLayer for both the graph-encoder and -decoder.
+        """
         super().__init__()
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -44,6 +59,15 @@ class TSPModel(nn.Module):
         )  # remove encoding and make it do it once
 
     def forward(self, env, rollout=False) -> Tuple[float, float]:
+        """
+        Forward method of the model
+        Args:
+            env (gym.Env): environment which the agent has to solve.
+            rollout (bool, optional): policy decision. Defaults to False.
+
+        Returns:
+            Tuple[float, float]: accumulated loss and log probabilities.
+        """
         done = False
         state = torch.tensor(env.get_state(), dtype=torch.float, device=self.device)
         acc_loss = torch.zeros(size=(state.shape[0],), device=self.device)
@@ -80,6 +104,20 @@ class TSPAgent:
         csv_path: str = "loss_log.csv",
         seed=69,
     ):
+        """
+        The TSPModel is used in companionship with the TSPEnv
+        to solve the capacited vehicle routing problem.
+
+        Args:
+            node_dim (int): Input dimension of a regular graph node.
+            emb_dim (int): Size of a vector in the embedding space.
+            hidden_dim (int): Dimension of the hidden layers of the 
+                ff-network layers within the graph-encoder.
+            num_attention_layers (int): Number of attention layers 
+                for both the graph-encoder and -decoder.
+            num_heads (int): Number of attention heads in each 
+                MultiHeadAttentionLayer for both the graph-encoder and -decoder.
+        """
         torch.manual_seed(seed)
         np.random.seed(seed)
 
@@ -113,6 +151,14 @@ class TSPAgent:
         eval_epochs: int = 1,
         check_point_dir: str = "./check_points/",
     ):
+        """_summary_
+
+        Args:
+            env (_type_): _description_
+            epochs (int, optional): _description_. Defaults to 100.
+            eval_epochs (int, optional): _description_. Defaults to 1.
+            check_point_dir (str, optional): _description_. Defaults to "./check_points/".
+        """
         logging.info("Start Training")
         with open(self.csv_path, "w+", newline="") as file:
             writer = csv.writer(file)
@@ -156,6 +202,12 @@ class TSPAgent:
             self.save_model(episode=e, check_point_dir=check_point_dir)
 
     def save_model(self, episode: int, check_point_dir: str) -> None:
+        """_summary_
+
+        Args:
+            episode (int): _description_
+            check_point_dir (str): _description_
+        """
         if not os.path.exists(check_point_dir):
             os.makedirs(check_point_dir)
 
@@ -165,6 +217,15 @@ class TSPAgent:
             )
 
     def step(self, env, rollouts: Tuple[bool, bool]):
+        """_summary_
+
+        Args:
+            env (_type_): _description_
+            rollouts (Tuple[bool, bool]): _description_
+
+        Returns:
+            _type_: _description_
+        """
         env.reset()
         env_baseline = deepcopy(env)
 
@@ -176,6 +237,14 @@ class TSPAgent:
         return loss, loss_b, log_prob
 
     def evaluate(self, env):
+        """_summary_
+
+        Args:
+            env (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         self.model.eval()
 
         with torch.no_grad():

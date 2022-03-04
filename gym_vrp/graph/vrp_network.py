@@ -7,7 +7,11 @@ import numpy as np
 
 class VRPNetwork:
     def __init__(
-        self, num_graphs: int, num_nodes: int, num_depots: int,
+        self,
+        num_graphs: int,
+        num_nodes: int,
+        num_depots: int,
+        plot_demand: bool = False,
     ) -> List[VRPGraph]:
         """
         Creates num_graphs random generated fully connected 
@@ -35,7 +39,7 @@ class VRPNetwork:
 
         # generate a graph with nn nodes and nd depots
         for _ in range(num_graphs):
-            self.graphs.append(VRPGraph(num_nodes, num_depots,))
+            self.graphs.append(VRPGraph(num_nodes, num_depots, plot_demand=plot_demand))
 
     def get_distance(self, graph_idx: int, node_idx_1: int, node_idx_2: int) -> float:
         """

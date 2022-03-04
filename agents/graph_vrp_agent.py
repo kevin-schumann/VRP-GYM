@@ -18,7 +18,7 @@ class VRPModel(TSPModel):
         num_heads: int,
     ):
         """
-        The VRPModel is used in companionship with the VRPDemandEnv
+        The VRPModel is used in companionship with the VRPEnv
         to solve the capacited vehicle routing problem.
 
         Args:
@@ -51,13 +51,13 @@ class VRPModel(TSPModel):
 
     def forward(self, env, rollout=False) -> Tuple[float, float]:
         """
-
+        Forward method of the model
         Args:
-            env (_type_): _description_
-            rollout (bool, optional): _description_. Defaults to False.
+            env (gym.Env): environment which the agent has to solve.
+            rollout (bool, optional): policy decision. Defaults to False.
 
         Returns:
-            Tuple[float, float]: _description_
+            Tuple[float, float]: accumulated loss and log probabilities.
         """
         done = False
         state = torch.tensor(env.get_state(), dtype=torch.float, device=self.device)

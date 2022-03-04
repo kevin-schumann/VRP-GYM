@@ -23,9 +23,9 @@
 - Präsentation grober Plan
 
 ## 4.01
-- Code Cleanup
-- Testfälle fixen
-- Präsentation erstellen
+- Code Cleanup - 
+- Testfälle fixen - done 
+- Präsentation erstellen - done
     - Motivation
     - Was ist VRP
     - Was haben wir gemacht
@@ -33,4 +33,5 @@
     - Results (3 Folien)
     - Future Work
     - Meme
-- Reproduction Checklist ausfüllen
+- Reproduction Checklist ausfüllen - done
+- docs generieren

@@ -13,15 +13,14 @@ class GraphEncoder(nn.Module):
         num_heads: int = 8,
     ):
         """
-        Initalises the GraphEncoder
+        Initalizes the GraphEncoder
 
         Args:
+            node_input_dim (int): Feature Dimension of input nodes
             embedding_dim (int): Number of dimensions in the embedding space.
             hidden_dim (int): Number of neurons of the hidden layer of the fcl.
             num_attention_layers (int): Number of attention layers.
             num_heads (int): Number of heads in each attention layer
-            depot_input_dim (int):
-            node_input_dim (int): _description_
         """
         super().__init__()
         # initial embeds ff layer for each nodes type
@@ -46,7 +45,6 @@ class GraphEncoder(nn.Module):
 
         Args:
             x (torch.Tensor): Shape (num_graphs, num_nodes, num_features)
-            depot_idx (torch.Tensor): Index of the depot in each graph
 
         Returns:
             torch.Tensor: Returns the embedding of each node in each graph.
@@ -70,6 +68,17 @@ class GraphDemandEncoder(GraphEncoder):
         num_attention_layers: int = 3,
         num_heads: int = 8,
     ):
+        """
+        Initalizes the GraphDemandEncoder
+
+        Args:
+            depot_input_dim (int): Feature Dimension of input depots
+            node_input_dim (int): Feature Dimension of input nodes
+            embedding_dim (int): Number of dimensions in the embedding space.
+            hidden_dim (int): Number of neurons of the hidden layer of the fcl.
+            num_attention_layers (int): Number of attention layers.
+            num_heads (int): Number of heads in each attention layer
+        """
         super().__init__(
             node_input_dim=node_input_dim,
             embedding_dim=embedding_dim,
@@ -84,6 +93,18 @@ class GraphDemandEncoder(GraphEncoder):
         self.depot_embed = nn.Linear(depot_input_dim, embedding_dim)
 
     def forward(self, x, depot_mask):
+        """
+        Calculates the node embedding for each node
+        in each graph with regards to the depots.
+
+        Args:
+            x (torch.Tensor): Shape (num_graphs, num_nodes, num_features)
+            depot_mask (torch.Tensor): Mask of the depot in each graph
+
+        Returns:
+            torch.Tensor: Returns the embedding of each node in each graph.
+                Shape (num_graphs, num_nodes, embedding_dim).
+        """
         batch_size, num_nodes, _ = x.size()
 
         not_depots = x[~depot_mask].view(batch_size, -1, self.node_f_dim)
