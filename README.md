@@ -19,7 +19,7 @@ The code can be easily extended to support other variants of the VRP Problem. We
 
 #### VRP-Agent:
 ![](./static/landing_video/VRP_landing.gif)
-#### IPR-Agent:
+#### IRP-Agent:
 ![](./static/landing_video/IRP_landing.gif)
 
 <!-- GETTING STARTED -->
@@ -53,14 +53,14 @@ To install the required packages we recommend using [Conda](https://docs.conda.i
 ## Usage
 To initialize an vrp environment and train an agent you just need a few lines of code. Suppose you want to train the attention agent on the IRP problem:
 ```py
-from gym_vrp.envs.vrp import DefaultVRPEnv, DemandVRPEnv
-from agents.graph_agent import VRPAgent, VRPDemandAgent
+from gym_vrp.envs import VRPEnv
+from agents import VRPAgent
 
 # Init the environment
-env = DemandVRPEnv(num_nodes=20, batch_size=512)
+env = VRPEnv(num_nodes=20, batch_size=512)
 
 # Init the agent
-agent = VRPDemandAgent(depot_dim=2, node_dim=3)
+agent = VRPAgent()
 # Start training
 agent.train(env)
 ```
@@ -78,15 +78,15 @@ We used a Nvidia GTX 1070 TI and 16GB RAM to evaluate the agent on our envs.
 
 The above script will call the `reproduction.py` file with different environments.
 For the py file different arguments can be provided when used to evaluate a model, which are default set to the ones we used to evaluate our implementation.
-* --seeds: The used seeds for the env generation. __*Default: [69,123,420]*__
-* --batch_size: The used batch size. __*Default: 512*__
+* --seeds: The used seeds for the env generation. __*Default: [1234, 2468, 2048]*__
+* --batch_size: The used batch size. __*Default: 256*__
 * --num_nodes: Number of nodes in the evaluation graphs. __*Default: 20*__
-* --num_draw: Number of graphs that should be included in the video. __*Default: 6*__
-* --csv_path: Path where the results should be saved: __*Default: 'reproduction_results'*__
-* --model_path: Path to the train file of the model to evaluate against Random Agent
+* --num_draw: Number of graphs that should be included in the video. __*Default: 3*__
+* --csv_path: Path where the results should be saved: __*Default: 'reproduction_results.csv'*__
+* --model_path: Path to the train file of the model to evaluate against Random Agent.
 * --env_type: The environment variant that should be used. __Values: ['TSP', 'VRP', 'IRP'].__ __*Default: 'TSP'*__
 
-This script also produces a video of the evaluated agent, which will be saved in the `./Video` folder.
+This script also produces a video of the evaluated agent, which will be saved in the `./videos` folder.
 
 <!-- CONTACT -->
 ## Contact
