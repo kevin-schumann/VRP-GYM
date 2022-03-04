@@ -69,7 +69,9 @@ The agent will save his progress every 50 epochs in a directory called `check_po
 
 _For more advanced usage and architecture insights you can look at the [docs](/docs/)_.
 ## Reproduction
-To reproduce our results just run the `reproduction.sh`script inside the environment.
+To reproduce our results just run the `reproduction.sh`script inside the environment. 
+We used several seeds for training and evaluation.
+For training seeds and process see `train_models.py` and for evaluation seeds see `reproduction.py`.
 
 ```sh
 ./reproduction.sh
