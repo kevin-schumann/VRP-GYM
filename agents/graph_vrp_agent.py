@@ -96,6 +96,24 @@ class VRPAgent(TSPAgent):
         csv_path: str = "loss_log.csv",
         seed=69,
     ):
+        """
+        The VPRAgent is used in companionship with the VPREnv
+        to solve the vehicle routing problem.
+
+        Args:
+            depot_dim (int): Input dimension of a graph depot.
+            node_dim (int): Input dimension of a regular graph node.
+            emb_dim (int): Size of a vector in the embedding space.
+            hidden_dim (int): Dimension of the hidden layers of the 
+                ff-network layers within the graph-encoder.
+            num_attention_layers (int): Number of attention layers 
+                for both the graph-encoder and -decoder.
+            num_heads (int): Number of attention heads in each 
+                MultiHeadAttentionLayer for both the graph-encoder and -decoder.
+            lr (float): learning rate.
+            csv_path (string): file where the loss gets saved.
+            seed (int): the seed.
+        """
         super().__init__(
             node_dim=node_dim,
             emb_dim=emb_dim,

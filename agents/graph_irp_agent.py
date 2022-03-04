@@ -63,6 +63,8 @@ class IRPModel(TSPModel):
         """
         done = False
         # state = torch.tensor(env.get_state(), dtype=torch.float, device=self.device)
+
+        # split state in graph state and vehicle state
         graph_state, vehicle_state = env.get_state()
         graph_state = torch.tensor(graph_state, dtype=torch.float, device=self.device)
         vehicle_state = torch.tensor(
@@ -76,6 +78,7 @@ class IRPModel(TSPModel):
             x=graph_state[:, :, :3], depot_mask=graph_state[:, :, 3].bool()
         )
 
+        # play the game till done
         while not done:
             actions, log_prob = self.decoder(
                 node_embs=emb,
@@ -113,20 +116,25 @@ class IRPAgent(TSPAgent):
         num_heads: int = 8,
         lr: float = 1e-4,
         csv_path: str = "loss_log.csv",
-        seed=69,
+        seed: int = 69,
     ):
-        """_summary_
+        """
+        The IPRAgent is used in companionship with the IPREnv
+        to solve the capacited vehicle routing problem.
 
         Args:
-            depot_dim (int, optional): _description_. Defaults to 2.
-            node_dim (int, optional): _description_. Defaults to 3.
-            emb_dim (int, optional): _description_. Defaults to 128.
-            hidden_dim (int, optional): _description_. Defaults to 512.
-            num_attention_layers (int, optional): _description_. Defaults to 3.
-            num_heads (int, optional): _description_. Defaults to 8.
-            lr (float, optional): _description_. Defaults to 1e-4.
-            csv_path (str, optional): _description_. Defaults to "loss_log.csv".
-            seed (int, optional): _description_. Defaults to 69.
+            depot_dim (int): Input dimension of a graph depot.
+            node_dim (int): Input dimension of a regular graph node.
+            emb_dim (int): Size of a vector in the embedding space.
+            hidden_dim (int): Dimension of the hidden layers of the 
+                ff-network layers within the graph-encoder.
+            num_attention_layers (int): Number of attention layers 
+                for both the graph-encoder and -decoder.
+            num_heads (int): Number of attention heads in each 
+                MultiHeadAttentionLayer for both the graph-encoder and -decoder.
+            lr (float): learning rate.
+            csv_path (string): file where the loss gets saved.
+            seed (int): the seed.
         """
         super().__init__(
             node_dim=node_dim,

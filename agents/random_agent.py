@@ -4,6 +4,10 @@ import numpy as np
 
 
 class RandomAgent(nn.Module):
+    """
+    Acts randomly within a TSPEnv (or inherited).
+    """
+
     def __init__(self, seed: int = 69):
         super().__init__()
         np.random.seed(seed)
@@ -11,6 +15,7 @@ class RandomAgent(nn.Module):
     def forward(self, env) -> float:
         state = env.get_state()
 
+        # for IRPEnv
         if isinstance(state, tuple):
             state = state[0]
 
@@ -19,6 +24,7 @@ class RandomAgent(nn.Module):
 
         # play game
         while not done:
+            # for IRPEnv
             if isinstance(state, tuple):
                 state = state[0]
 

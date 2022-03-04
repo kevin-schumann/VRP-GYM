@@ -105,8 +105,8 @@ class TSPAgent:
         seed=69,
     ):
         """
-        The TSPModel is used in companionship with the TSPEnv
-        to solve the capacited vehicle routing problem.
+        The TSPAgent is used in companionship with the TSPEnv
+        to solve the traveling salesman problem.
 
         Args:
             node_dim (int): Input dimension of a regular graph node.
@@ -117,6 +117,9 @@ class TSPAgent:
                 for both the graph-encoder and -decoder.
             num_heads (int): Number of attention heads in each 
                 MultiHeadAttentionLayer for both the graph-encoder and -decoder.
+            lr (float): learning rate.
+            csv_path (string): file where the loss gets saved.
+            seed (int): the seed.
         """
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -151,13 +154,16 @@ class TSPAgent:
         eval_epochs: int = 1,
         check_point_dir: str = "./check_points/",
     ):
-        """_summary_
+        """
+        Trains the TSPAgent on an TSPEnvironment.
 
         Args:
-            env (_type_): _description_
-            epochs (int, optional): _description_. Defaults to 100.
-            eval_epochs (int, optional): _description_. Defaults to 1.
-            check_point_dir (str, optional): _description_. Defaults to "./check_points/".
+            env: TSPEnv instance to train on
+            epochs (int, optional): Amount of epochs to train. Defaults to 100.
+            eval_epochs (int, optional): Amount of epochs to evaluate the current 
+                model against the baseline. Defaults to 1.
+            check_point_dir (str, optional): Directiory that the checkpoints will
+                be stored in. Defaults to "./check_points/".
         """
         logging.info("Start Training")
         with open(self.csv_path, "w+", newline="") as file:
@@ -202,11 +208,13 @@ class TSPAgent:
             self.save_model(episode=e, check_point_dir=check_point_dir)
 
     def save_model(self, episode: int, check_point_dir: str) -> None:
-        """_summary_
+        """
+        Saves the model parameters every 50 epochs.
 
         Args:
-            episode (int): _description_
-            check_point_dir (str): _description_
+            episode (int): Current episode number
+            check_point_dir (str): Directory where the checkpoints
+                will be stored.
         """
         if not os.path.exists(check_point_dir):
             os.makedirs(check_point_dir)
@@ -217,14 +225,24 @@ class TSPAgent:
             )
 
     def step(self, env, rollouts: Tuple[bool, bool]):
-        """_summary_
+        """
+        Plays the environment to completion for
+        both the baseline and the current model.
+
+        Resets the environment beforehand.
 
         Args:
-            env (_type_): _description_
-            rollouts (Tuple[bool, bool]): _description_
+            env (gym.env): Environment to train on
+            rollouts (Tuple[bool, bool]): Each entry decides 
+                if we sample the actions from the learned
+                distribution or act greedy. Indices are for
+                the current model (0) and the baseline (1).
 
         Returns:
-            _type_: _description_
+            (Tuple[torch.tensor, torch.tensor, torch.tensor]): 
+                Tuple of the loss of the current model, the loss
+                of the baseline and the log_probability for the 
+                current model.
         """
         env.reset()
         env_baseline = deepcopy(env)
@@ -237,13 +255,15 @@ class TSPAgent:
         return loss, loss_b, log_prob
 
     def evaluate(self, env):
-        """_summary_
+        """
+        Evalutes the current model on the given environment.
 
         Args:
-            env (_type_): _description_
-
+            env (gym.env): TSPAgent (or inherited) environment
+                to evaluate
+ 
         Returns:
-            _type_: _description_
+            torch.Tensor: Reward (e.g. -cost) of the current model.
         """
         self.model.eval()
 
