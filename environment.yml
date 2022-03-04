@@ -15,3 +15,6 @@ dependencies:
       - gym
       - matplotlib
       - scipy
+      - pandas
+      - plotly
+      - networkx
