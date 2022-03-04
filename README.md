@@ -15,7 +15,7 @@ An easy to use, understand and extend Vehicle Routing Problem Environment build 
    * Default VRP (Start on Depot and have to return to it)
    * Inventory Routing Problem (Vehicle is responsible for satisfying the demands in each delivery point)
 
-The code can be easily extended to support other variants of the VRP Problem. We also provide a state of the art attention based graph agent inspired by [ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!](https://arxiv.org/pdf/1803.08475.pdf) and a random decision based agent. We evaluated the attention agent against the random agent on all three variant environments. The visualized results of the training and evaluation statistics can be found in `notebooks/results.ipynb` or in the `images` folder.
+The code can be easily extended to support other variants of the VRP Problem. We also provide a state of the art attention based graph agent based on [ATTENTION, LEARN TO SOLVE ROUTING PROBLEMS!](https://arxiv.org/pdf/1803.08475.pdf) and a random decision based agent. We evaluated the attention agent against the random agent on all three variant environments. The visualized results of the training and evaluation statistics can be found in `notebooks/results.ipynb` or in the `images` folder.
 
 #### VRP-Agent:
 ![](./static/landing_video/VRP_landing.gif)
